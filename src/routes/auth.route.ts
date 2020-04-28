@@ -40,6 +40,49 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
 
 });
 
+AuthRoutes.post('/login', (req: Request, res: Response) => {
+    let body: IBodyUser = req.body;
+
+    let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+
+    let sql = `CALL as_sp_login( '${ body.userName }', '${ passEncrypt }' );`;
+
+    Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+        
+        let token = '';
+        let showError = data[0].showError;
+        if (showError === 0) {
+
+            if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
+                return res.json({
+                    ok: true,
+                    showError: 4,
+                });
+            }
+
+            delete data[0].userPassword;
+            delete data[0].showError;
+
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+        }
+
+        res.json({
+            ok: true,
+            showError,
+            data: data[0],
+            token
+        });
+
+    });
+
+});
+
 AuthRoutes.get('/nationality/GetAll', (req: Request, res: Response) => {
     
     let qCountry = req.query.qCountry || '';
