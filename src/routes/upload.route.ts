@@ -4,13 +4,14 @@ import fs from 'fs';
 import path from 'path';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
+import { verifyToken } from '../middlewares/token.mdd';
 
 const Mysql = MysqlClass.instance;
 
 let UploadRoutes = Router();
 UploadRoutes.use( fileUpload() );
 
-UploadRoutes.put('/upload/:module/:id', (req: Request, res: Response) => {
+UploadRoutes.put('/upload/:module/:id', verifyToken , (req: Request, res: Response) => {
     
     let module = req.params.module.toLocaleLowerCase() || '';
     let idEntity = Number( req.params.id ) || 0;
@@ -51,7 +52,10 @@ UploadRoutes.put('/upload/:module/:id', (req: Request, res: Response) => {
         });
     }
 
-    file.mv(`/upload/${ module }/`, (error: any) => {
+    let nameFile = `${ idEntity }-photo.png`;
+    let pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
+
+    file.mv(pathImg, (error: any) => {
         if (error){
             return res.status(500).json({
                 ok: false,
@@ -60,7 +64,7 @@ UploadRoutes.put('/upload/:module/:id', (req: Request, res: Response) => {
         }
 
         if (module === 'user') {            
-            updatedImgUser(idEntity, '0', req, res);
+            updatedImgUser(idEntity, nameFile, req, res);
         }
     
     });
@@ -85,7 +89,8 @@ function updatedImgUser( pkUser: number, nameFile: string, req: Request , res: R
             }
 
             res.json({
-                ok: true
+                ok: true,
+                messge: 'Se subió imagen exitosamente'
             });
         });
 

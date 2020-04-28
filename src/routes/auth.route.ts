@@ -15,10 +15,10 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
 
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
     
-    let sql = `CALL as_login( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.sex }', '${ body.userName }', '${ passEncrypt }', 'USER_CLIENT_ROLE', ${ body.google }, 0, ${ reqIp.getClientIp( req ) });`;
+    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.userName }', '${ passEncrypt }', 'USER_CLIENT_ROLE', ${ body.google }, 0, '${ reqIp.getClientIp( req ) }' );`;
 
     Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
-        if (error) {
+        if (error) { 
             return res.status(401).json({
                 ok: false,
                 error
@@ -33,8 +33,53 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
         res.json({
             ok: true,
             showError: data[0].showError,
+            data: data[0],
             token
         });
     });
 
 });
+
+AuthRoutes.get('/nationality/GetAll', (req: Request, res: Response) => {
+    
+    let qCountry = req.query.qCountry || '';
+
+    let sql = `CALL as_sp_getListNationality( '${ qCountry }' );`;
+
+    Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data
+        });
+
+    });
+});
+
+AuthRoutes.get('/typeDocument/GetAll', (req: Request, res: Response) => {
+    
+    let sql = `CALL as_sp_getListTypeDocument( );`;
+
+    Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data
+        });
+
+    });
+});
+
+export default AuthRoutes;

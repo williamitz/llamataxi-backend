@@ -1,18 +1,19 @@
 export interface IBodyUser {
     pkUser?: number;
     fkTypeDocument: number;
-    fkNationality: number;
+    fkNationality?: number;
 
     name: string;
     surname: string;
     document: string;
-    email: string;
-    phone: string;
-    sex: string;
+    dateBirth: string;
+    email?: string;
+    phone?: string;
+    sex?: string;
     img?: string;
-    google: boolean;
+    google?: boolean;
 
-    userName: string;
-    userPassword: string;
-    userPassRepit: string;
+    userName?: string;
+    userPassword?: string;
+    userPassRepit?: string;
 }

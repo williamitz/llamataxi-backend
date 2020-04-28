@@ -31,4 +31,6 @@ NavPaterRouter.post( '/addNavPather' ,(req: any, res: Response) => {
 
 });
 
+
+
 export default NavPaterRouter;
