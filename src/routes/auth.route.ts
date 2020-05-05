@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { IBodyUser } from '../interfaces/body_user.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { SEED_KEY } from '../global/environments.global';
+import { verifyToken } from '../middlewares/token.mdd';
 
 const Mysql = MysqlClass.instance;
 
@@ -57,12 +58,12 @@ AuthRoutes.post('/login', (req: Request, res: Response) => {
         
         let token = '';
         let showError = data[0].showError;
-        if (showError === 0) {
+        if (showError != 1) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
                 return res.json({
                     ok: true,
-                    showError: 4,
+                    showError: showError + 4,
                 });
             }
 
@@ -124,5 +125,30 @@ AuthRoutes.get('/typeDocument/GetAll', (req: Request, res: Response) => {
 
     });
 });
+
+AuthRoutes.post('/authorization', (req: Request, res: Response) => {
+
+    let token = req.get('Authorization') || '';
+
+    jwt.verify( token, SEED_KEY, (error: any, decoded: any) => {
+
+        if (error) {
+            return res.json({
+                ok: false,
+                error
+            });
+        }
+
+
+        res.json({
+            ok: true,
+            messgae: 'token valid :D'
+        });
+
+    });
+    
+
+});
+
 
 export default AuthRoutes;

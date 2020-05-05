@@ -5,19 +5,32 @@ import path from 'path';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { verifyToken } from '../middlewares/token.mdd';
+import FileSystem from '../classes/fileSystem.class';
 
 const Mysql = MysqlClass.instance;
 
 let UploadRoutes = Router();
 UploadRoutes.use( fileUpload() );
 
-UploadRoutes.put('/upload/:module/:id', verifyToken , (req: Request, res: Response) => {
+UploadRoutes.put('/upload/:module/:id/:typeFile', verifyToken , (req: Request, res: Response) => {
     
     let module = req.params.module.toLocaleLowerCase() || '';
     let idEntity = Number( req.params.id ) || 0;
+    let typeFile = req.params.typeFile.toUpperCase() || '';
 
-    let modulesValid = ['user'];
-    let typesValid = ['jpg', 'png', 'jpeg'];
+    let modulesValid = ['user', 'driver'];
+    let imgValid = ['jpg', 'png', 'jpeg', 'pdf'];
+    let typesValid = [
+        'LICENSE'
+        ,'PHOTO_CHECK'
+        ,'CRIMINAL_RECORD'
+        ,'POLICIAL_RECORD'
+        ,'SOAT'
+        ,'PROPERTY_CARD'
+        ,'TAXI_FRONTAL'
+        ,'TAXI_BACK'
+        ,'TAXI_INTERIOR'
+    ];
 
     if (!req.files || Object.keys(req.files || []).length === 0) {
         return res.status(400).json({
@@ -37,23 +50,51 @@ UploadRoutes.put('/upload/:module/:id', verifyToken , (req: Request, res: Respon
         });
     }
 
-
     let file: any = req.files.file;
 
-    let arrName = file.name.split('.');
-    let extensionFile = arrName[ arrName.length - 1 ].toLocaleLowerCase();
-
-    if (typesValid.indexOf( extensionFile ) < 0) {
+    if (!file) {
         return res.status(400).json({
             ok: false,
             error: {
-                message: 'Los tipos de imágenes válidos son: ' + typesValid.join(', ')
+                message: 'No se encontró archivo a subir'
             }
         });
     }
 
-    let nameFile = `${ idEntity }-photo.png`;
-    let pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
+    let arrName = file.name.split('.');
+    let extensionFile = arrName[ arrName.length - 1 ].toLocaleLowerCase();
+
+    if (imgValid.indexOf( extensionFile ) < 0) {
+        return res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Los tipos de imágenes válidos son: ' + imgValid.join(', ')
+            }
+        });
+    }
+    let nameFile = '';
+    let pathImg = '';
+    if (module === 'user') {
+
+        nameFile = `${ idEntity }-photo.png`;
+        pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
+        
+    }else if (module === 'driver') {
+        
+        if ( typesValid.indexOf( typeFile ) === -1 ) {
+            return res.status(400).json({
+                ok: false,
+                error: {
+                    message: 'Los tipos de documentos válidos son: ' + typesValid.join(', ')
+                }
+            });
+        }
+
+        pathImg = FileSystem.buildPathDriver( idEntity );
+        const time = new Date().getTime();
+        pathImg = path.resolve( pathImg , `${ typeFile }-${ time }.${ extensionFile }`);
+    }
+
 
     file.mv(pathImg, (error: any) => {
         if (error){
@@ -65,10 +106,11 @@ UploadRoutes.put('/upload/:module/:id', verifyToken , (req: Request, res: Respon
 
         if (module === 'user') {            
             updatedImgUser(idEntity, nameFile, req, res);
+        }else if( module === 'driver' ) {
+            
         }
     
     });
-
 
 });
 
