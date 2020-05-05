@@ -1,4 +1,5 @@
-export interface INavPather {
-    pkNavPather?: number;
-    navPatherText: string;
+export interface INavFather {
+  pkNavFather?: number;
+  navFatherText: string;
+  statusRegister: number;
 }

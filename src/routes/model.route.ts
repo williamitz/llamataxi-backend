@@ -1,17 +1,18 @@
-import { Response, Router } from "express";
-import { INavFather } from "../interfaces/body_nav.interface";
-import MysqlClass from "../classes/mysqlConnect.class";
-import { verifyToken } from "../middlewares/token.mdd";
+import { Request, Response, Router } from "express";
+import { IBodyModel } from "./../interfaces/body_model.interface";
+import MysqlClass from "./../classes/mysqlConnect.class";
+import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
-
-let NavFatherRouter = Router();
+let ModelRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
-// middlware , verifyToken
-NavFatherRouter.get("/getListNavFather", (req: any, res: Response) => {
-  let body: INavFather = req.body;
-  let sql = `CALL as_sp_getListNavFather('${body.navFatherText || ""}',
-      '${body.statusRegister || 2}');`;
+
+ModelRouter.get("/getListModel", (req: Request, res: Response) => {
+  let body: IBodyModel = req.body;
+  let sql = `CALL as_sp_getListModel('${body.fkCategory || ""}',
+  '${body.fkBrand || ""}',
+  '${body.nameModel || ""}',
+  '${body.statusRegister || 2}');`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -26,38 +27,14 @@ NavFatherRouter.get("/getListNavFather", (req: any, res: Response) => {
   });
 });
 
-NavFatherRouter.post("/addNavFather", (req: any, res: Response) => {
-  let body: INavFather = req.body;
+ModelRouter.post("/addModel", (req: any, res: Response) => {
+  let body: IBodyModel = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_addNavFahter( '${body.navFatherText}', 
-  ${pkUserToken} , 
-  '${reqIp.getClientIp(req)}' );`;
-
-  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
-    if (error) {
-      return res.status(400).json({
-        ok: false,
-        error,
-      });
-    }
-
-    res.json({
-      ok: true,
-      data: data[0],
-    });
-  });
-});
-
-NavFatherRouter.put("/updateNavFather/:id", (req: any, res: Response) => {
-  let body: INavFather = req.body;
-
-  let pkParam = req.params.id || 0;
-  let pkUserToken = 1; //req.userData.pkUser || 0;
-
-  let sql = `CALL as_sp_updateNavFather( ${pkParam}, 
-    '${body.navFatherText}',
-    ${pkUserToken},  
+  let sql = `CALL as_sp_addModel( ${body.fkCategory || ""},
+    ${body.fkBrand || ""},
+    '${body.nameModel || ""}',
+     ${pkUserToken} , 
     '${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
@@ -74,13 +51,40 @@ NavFatherRouter.put("/updateNavFather/:id", (req: any, res: Response) => {
   });
 });
 
-NavFatherRouter.delete(
-  "/deleteNavFather/:id/:statusRegister",
-  (req: any, res: Response) => {
+ModelRouter.put("/updateModel/:id", (req: any, res: Response) => {
+  let body: IBodyModel = req.body;
+
+  let pkParam = req.params.id || 0;
+  let pkUserToken = 1; //req.userData.pkUser || 0;
+
+  let sql = `CALL as_sp_updateModel( ${pkParam}, 
+    ${body.fkCategory || ""},
+    ${body.fkBrand || ""},
+    '${body.nameModel || ""}',  
+    ${pkUserToken} ,  
+    '${reqIp.getClientIp(req)}' );`;
+
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+    res.json({
+      ok: true,
+      data: data[0],
+    });
+  });
+});
+
+ModelRouter.delete(
+  "/deleteModel/:id/:statusRegister",
+  (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;
-    let sql = `CALL as_sp_deleteNavFather( '${pkParam}', 
+    let sql = `CALL as_sp_deleteModel( '${pkParam}', 
     '${status}',
     ${pkUserToken} , 
     '${reqIp.getClientIp(req)}' );`;
@@ -98,4 +102,4 @@ NavFatherRouter.delete(
     });
   }
 );
-export default NavFatherRouter;
+export default ModelRouter;
