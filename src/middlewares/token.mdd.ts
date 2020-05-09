@@ -22,3 +22,18 @@ export let verifyToken = ( req: any, res: Response, next: NextFunction ) => {
     });
 
 }
+
+export let verifyWebmasterRole = ( req: any, res: Response, next: NextFunction ) => {
+    
+    let role = req.userData.role || 'xD';
+    if ( role !== 'WEBMASTER_ROLE' ) {
+        return res.status(401).json({
+            ok: false,
+            error: {
+                message: 'Acceso restringido!, comuniquese con el administrador.'
+            }
+        });
+    }
+
+    next();
+}

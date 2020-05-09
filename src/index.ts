@@ -4,7 +4,7 @@ import MainRouter from './routes/main.route';
 import MainServer from './classes/mainServer.class';
 import MysqlClass from './classes/mysqlConnect.class';
 
-const server = MainServer.instance;
+const server = MainServer.instance; 
 
 // parse application/x-www-form-urlencoded
 server.app.use( bodyParser.urlencoded({ extended: false }) );
@@ -20,7 +20,7 @@ server.app.use( MainRouter );
 server.onRun( (error: any) => {
 
     if (error) return console.log('Error al levantar servidor, revise dependencias  :(');
-    
+
     console.log(`Servidor corriendo en puerto : ${ server.port }`);
     MysqlClass.instance;
     

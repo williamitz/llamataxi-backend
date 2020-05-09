@@ -41,6 +41,42 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
 
 });
 
+AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
+    let body: IBodyUser = req.body; 
+
+    let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+
+    let sql = `CALL as_sp_addDriver(${ body.fkTypeDocument }, ${ body.fkNationality }`;
+    sql += `,'${ body.name }', '${ body.surname }', '${ body.document }' `;
+    sql += `, ${ body.verifyReniec }, '${ body.email }', '${ body.phone }' `;
+    sql += `, '${ body.brithDate }', '${ body.sex }', '${ body.userName }', '${ passEncrypt }' `;
+    sql += `, 'DRIVER_ROLE', ${ body.google }, '${ body.dateLicenseExpiration }', ${ body.isEmployee } `;
+    sql += `, '${ body.numberPlate }', ${ body.year }, '${ body.color }', '${ body.dateSoatExpiration }' `;
+    sql += `, ${ body.isProper }, 0, '${ reqIp.getClientIp(req) }');`;
+
+    Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+        
+        let token = '';
+        if (data[0].showError === 0) {
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0],
+            token
+        });
+    });
+
+});
+
 AuthRoutes.post('/login', (req: Request, res: Response) => {
     let body: IBodyUser = req.body;
 
@@ -63,7 +99,7 @@ AuthRoutes.post('/login', (req: Request, res: Response) => {
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
                 return res.json({
                     ok: true,
-                    showError: showError + 4,
+                    showError: showError + 2,
                 });
             }
 

@@ -6,14 +6,26 @@ export interface IBodyUser {
     name: string;
     surname: string;
     document: string;
-    dateBirth: string;
+    brithDate: string;
     email?: string;
     phone?: string;
     sex?: string;
     img?: string;
     google?: boolean;
 
+    verifyReniec?: boolean;
+
     userName?: string;
     userPassword?: string;
     userPassRepit?: string;
+
+    // registro de conductor
+
+    dateLicenseExpiration?: string;
+    isEmployee?: boolean;
+    color?: string;
+    dateSoatExpiration?: string;
+    isProper?: boolean;
+    numberPlate?: string;
+    year?: number;
 }

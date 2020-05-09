@@ -44,4 +44,6 @@ UserRouter.put('/user/updateProfile/:id', verifyToken, (req: any, res: Response)
     });
 });
 
+
+
 export default UserRouter;
