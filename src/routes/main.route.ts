@@ -11,6 +11,8 @@ import NavChildrenRouter from "./nav-children.route";
 import MenuRoleRouter from "./menu-role.route";
 import VehicleDriverRouter from "./vehicle-driver.route";
 import NavFatherRouter from "./nav-father.route";
+import FilesRouter from "./files.route";
+import DriverRoutes from "./driver.route";
 
 let MainRouter = Router();
 
@@ -26,5 +28,8 @@ MainRouter.use(MenuRoleRouter);
 MainRouter.use(VehicleDriverRouter);
 MainRouter.use(NotificationRouter);
 MainRouter.use(UserRouter);
+MainRouter.use(FilesRouter);
+MainRouter.use(DriverRoutes);
+
 
 export default MainRouter;

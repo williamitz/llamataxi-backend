@@ -1,4 +1,4 @@
-import {  Response, NextFunction } from 'express';
+import {Request ,Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { SEED_KEY } from '../global/environments.global';
 
@@ -36,4 +36,25 @@ export let verifyWebmasterRole = ( req: any, res: Response, next: NextFunction )
     }
 
     next();
+}
+
+export let verifyTokenUrl = ( req: any, res: Response, next: NextFunction ) => {
+    
+    let token = String( req.query.token ) || 'xD';
+    
+    jwt.verify( token, SEED_KEY, (error: any, decoded: any) => {
+
+        if (error) {
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+
+        req.userData = decoded.dataUser;
+
+        next();
+
+    });
+
 }
