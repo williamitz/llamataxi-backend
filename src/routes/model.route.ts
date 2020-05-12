@@ -7,12 +7,48 @@ let ModelRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-ModelRouter.get("/getListModel", (req: Request, res: Response) => {
-  let body: IBodyModel = req.body;
-  let sql = `CALL as_sp_getListModel('${body.fkCategory || ""}',
-  '${body.fkBrand || ""}',
-  '${body.nameModel || ""}',
-  '${body.statusRegister || 2}');`;
+ModelRouter.get("/Model/Get", (req: Request, res: Response) => {
+  let page = req.query.page || 1;
+  let fkCategory = req.query.fkCategory || 0;
+  let fkBrand = req.query.fkBrand || 0;
+  let nameModel = req.query.nameModel || "";
+  let showInactive = req.query.showInactive || true;
+  let sql = `CALL as_sp_getListModel(${page},'${fkCategory}',
+  '${fkBrand}',
+  '${nameModel}',
+  ${showInactive});`;
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+    let sqlOverall = `CALL as_sp_overallPageModel('${fkCategory}',
+    '${fkBrand}',
+    '${nameModel}',${showInactive});`;
+
+    MysqlCon.onExecuteQuery(
+      sqlOverall,
+      (errorOverall: any, dataOverall: any[]) => {
+        if (errorOverall) {
+          return res.status(400).json({
+            ok: false,
+            error: errorOverall,
+          });
+        }
+
+        res.json({
+          ok: true,
+          data: data,
+          total: dataOverall[0].total,
+        });
+      }
+    );
+  });
+});
+ModelRouter.get("/Model/GetAll", (req: Request, res: Response) => {
+  let sql = `CALL as_sp_getListModelAll();`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -26,8 +62,7 @@ ModelRouter.get("/getListModel", (req: Request, res: Response) => {
     });
   });
 });
-
-ModelRouter.post("/addModel", (req: any, res: Response) => {
+ModelRouter.post("/Model/Add", (req: any, res: Response) => {
   let body: IBodyModel = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
@@ -46,12 +81,13 @@ ModelRouter.post("/addModel", (req: any, res: Response) => {
     }
     res.json({
       ok: true,
+      showError: data[0].showError,
       data: data[0],
     });
   });
 });
 
-ModelRouter.put("/updateModel/:id", (req: any, res: Response) => {
+ModelRouter.put("/Model/Update/:id", (req: any, res: Response) => {
   let body: IBodyModel = req.body;
 
   let pkParam = req.params.id || 0;
@@ -73,19 +109,20 @@ ModelRouter.put("/updateModel/:id", (req: any, res: Response) => {
     }
     res.json({
       ok: true,
+      showError: data[0].showError,
       data: data[0],
     });
   });
 });
 
 ModelRouter.delete(
-  "/deleteModel/:id/:statusRegister",
+  "/Model/Delete/:id/:statusRegister",
   (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;
     let sql = `CALL as_sp_deleteModel( '${pkParam}', 
-    '${status}',
+    ${status},
     ${pkUserToken} , 
     '${reqIp.getClientIp(req)}' );`;
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
@@ -97,6 +134,7 @@ ModelRouter.delete(
       }
       res.json({
         ok: true,
+        showError: data[0].showError,
         data: data[0],
       });
     });

@@ -8,32 +8,55 @@ let NotificationRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-NotificationRouter.get(
-  "/getListNotification",
-  (req: Request, res: Response) => {
-    let body: IBodyNotification = req.body;
-    let sql = `CALL as_sp_getListNotification( '${body.fkUserEmisor || ""}',
-  '${body.fkUserReceptor || ""}',
-  '${body.notificationTitle || ""}',
-  '${body.sended || ""}', 
-  '${body.readed || ""}');`;
-    MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
-      if (error) {
-        return res.status(400).json({
-          ok: false,
-          error,
+NotificationRouter.get("/Notification/Get", (req: Request, res: Response) => {
+  let page = req.query.page || 1;
+  let fkUserEmisor = req.query.fkUserEmisor || "";
+  let fkUserReceptor = req.query.fkUserReceptor || "";
+  let notificationTitle = req.query.notificationTitle || "";
+  let sended = req.query.sended || 0;
+  let readed = req.query.readed || 0;
+  let showInactive = req.query.showInactive || true;
+
+  let sql = `CALL as_sp_getListNotification( ${page},
+    '${fkUserEmisor}',
+  '${fkUserReceptor}',
+  '${notificationTitle}',
+  '${sended}', 
+  '${readed}',
+  ${showInactive});`;
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+
+    let sqlOverall = `CALL as_sp_overallPageNotification('${fkUserEmisor}',
+      '${fkUserReceptor}',
+      '${notificationTitle}',
+      '${sended}', 
+      '${readed}',${showInactive});`;
+    MysqlCon.onExecuteQuery(
+      sqlOverall,
+      (errorOverall: any, dataOverall: any[]) => {
+        if (errorOverall) {
+          return res.status(400).json({
+            ok: false,
+            error: errorOverall,
+          });
+        }
+        res.json({
+          ok: true,
+          data: data,
+          total: dataOverall[0].total,
         });
       }
+    );
+  });
+});
 
-      res.json({
-        ok: true,
-        data: data,
-      });
-    });
-  }
-);
-
-NotificationRouter.post("/addNotification", (req: any, res: Response) => {
+NotificationRouter.post("/Notification/Add", (req: any, res: Response) => {
   let body: IBodyNotification = req.body;
 
   let pkUserToken = 1; //req.userData.pkUser || 0;
@@ -63,18 +86,21 @@ NotificationRouter.post("/addNotification", (req: any, res: Response) => {
     }
     res.json({
       ok: true,
+      showError: data[0].showError,
       data: data[0],
     });
   });
 });
 
-NotificationRouter.put("/updateNotification/:id", (req: any, res: Response) => {
-  let body: IBodyNotification = req.body;
+NotificationRouter.put(
+  "/Notification/Update/:id",
+  (req: any, res: Response) => {
+    let body: IBodyNotification = req.body;
 
-  let pkParam = req.params.id || 0;
-  let pkUserToken = 1; //req.userData.pkUser || 0;
+    let pkParam = req.params.id || 0;
+    let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_updateNotification( ${pkParam}, 
+    let sql = `CALL as_sp_updateNotification( ${pkParam}, 
     ${body.fkUserEmisor || ""},
   ${body.fkUserReceptor || ""},
   '${body.notificationTitle || ""}',
@@ -86,28 +112,30 @@ NotificationRouter.put("/updateNotification/:id", (req: any, res: Response) => {
     ${pkUserToken} ,  
     '${reqIp.getClientIp(req)}');`;
 
-  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
-    if (error) {
-      return res.status(400).json({
-        ok: false,
-        error,
+    MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+      if (error) {
+        return res.status(400).json({
+          ok: false,
+          error,
+        });
+      }
+      res.json({
+        ok: true,
+        showError: data[0].showError,
+        data: data[0],
       });
-    }
-    res.json({
-      ok: true,
-      data: data[0],
     });
-  });
-});
+  }
+);
 
 NotificationRouter.delete(
-  "/deleteNotification/:id/:statusRegister",
+  "/Notification/Delete/:id/:statusRegister",
   (req: any, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;
     let sql = `CALL as_sp_deleteNotification( '${pkParam}', 
-      '${status}',
+      ${status},
       ${pkUserToken} , 
       '${reqIp.getClientIp(req)}' );`;
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
@@ -119,6 +147,7 @@ NotificationRouter.delete(
       }
       res.json({
         ok: true,
+        showError: data[0].showError,
         data: data[0],
       });
     });
