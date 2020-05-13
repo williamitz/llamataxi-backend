@@ -3,6 +3,9 @@ import { verifyToken, verifyWebmasterRole } from '../middlewares/token.mdd';
 import { IBodyUser } from '../interfaces/body_user.interface';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { SEED_KEY } from '../global/environments.global';
 
 let UserRouter = Router();
 let MysqlCnn = MysqlClass.instance;
@@ -94,6 +97,47 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
     });
 
 } );
+
+UserRouter.post('/User/Add', [verifyToken, verifyWebmasterRole], (req: any, res: Response) => {
+    let body: IBodyUser = req.body;
+    let fkUser = req.userData.pkUser || 0;
+    let rolesValid = ['ADMIN_ROLE', 'ATENTION_ROLE'];
+
+    if (!rolesValid.includes( body.role )) {
+        return res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Los roles válidos son ' + rolesValid.join(', ')
+            }
+        });
+    }
+
+    let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+    
+    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.userName }', '${ passEncrypt }', '${ body.role }', ${ body.google }, ${ fkUser }, '${ reqIp.getClientIp( req ) }' );`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+        
+        let token = '';
+        if (data[0].showError === 0) {
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0],
+            token
+        });
+    });
+
+});
 
 
 export default UserRouter;

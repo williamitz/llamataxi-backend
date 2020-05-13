@@ -1,7 +1,6 @@
 import { Request, Response, Router } from "express";
 import { IBodyApplication } from "./../interfaces/body_application.interface";
 import MysqlClass from "./../classes/mysqlConnect.class";
-import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
 import { verifyWebmasterRole, verifyToken } from '../middlewares/token.mdd';
 

@@ -11,6 +11,7 @@ export interface IBodyUser {
     phone?: string;
     sex?: string;
     img?: string;
+    role: string;
     google?: boolean;
 
     verifyReniec?: boolean;

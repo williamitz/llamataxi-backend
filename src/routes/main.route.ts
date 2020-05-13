@@ -13,6 +13,7 @@ import VehicleDriverRouter from "./vehicle-driver.route";
 import NavFatherRouter from "./nav-father.route";
 import FilesRouter from "./files.route";
 import DriverRoutes from "./driver.route";
+import MessageRouter from './message.route';
 
 let MainRouter = Router();
 
@@ -30,6 +31,6 @@ MainRouter.use(NotificationRouter);
 MainRouter.use(UserRouter);
 MainRouter.use(FilesRouter);
 MainRouter.use(DriverRoutes);
-
+MainRouter.use(MessageRouter);
 
 export default MainRouter;
