@@ -8,11 +8,46 @@ let BrandRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-BrandRouter.get("/getListBrand", (req: Request, res: Response) => {
-  let body: IBodyBrand = req.body;
-  let sql = `CALL as_sp_getListBrand(${body.fkCategory || null},
-  '${body.nameBrand || ""}',
-  ${body.statusRegister || 2});`;
+BrandRouter.get("/Brand/Get", (req: Request, res: Response) => {
+  let page = req.query.page || 1;
+  let fkCategory = req.query.fkCategory || 0;
+  let nameBrand = req.query.nameBrand || "";
+  let showInactive = req.query.showInactive || true;
+  let sql = `CALL as_sp_getListBrand(${page},${fkCategory},
+  '${nameBrand}',
+  ${showInactive});`;
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+    let sqlOverall = `CALL as_sp_overallPageBrand(${fkCategory},
+      '${nameBrand}',
+      ${showInactive});`;
+
+    MysqlCon.onExecuteQuery(
+      sqlOverall,
+      (errorOverall: any, dataOverall: any[]) => {
+        if (errorOverall) {
+          return res.status(400).json({
+            ok: false,
+            error: errorOverall,
+          });
+        }
+
+        res.json({
+          ok: true,
+          data: data,
+          total: dataOverall[0].total,
+        });
+      }
+    );
+  });
+});
+BrandRouter.get("/Brand/GetAll", (req: Request, res: Response) => {
+  let sql = `CALL as_sp_getListBrandAll();`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -26,13 +61,12 @@ BrandRouter.get("/getListBrand", (req: Request, res: Response) => {
     });
   });
 });
-
-BrandRouter.post("/addBrand", (req: any, res: Response) => {
+BrandRouter.post("/Brand/Add", (req: any, res: Response) => {
   let body: IBodyBrand = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_addBrand( ${body.fkCategory || ""},    
-    '${body.nameBrand || ""}',
+  let sql = `CALL as_sp_addBrand( ${body.fkCategory},    
+    '${body.nameBrand}',
      ${pkUserToken} , 
     '${reqIp.getClientIp(req)}' );`;
 
@@ -45,20 +79,21 @@ BrandRouter.post("/addBrand", (req: any, res: Response) => {
     }
     res.json({
       ok: true,
+      showError: data[0].showError,
       data: data[0],
     });
   });
 });
 
-BrandRouter.put("/updateBrand/:id", (req: any, res: Response) => {
+BrandRouter.put("/Brand/Update/:id", (req: any, res: Response) => {
   let body: IBodyBrand = req.body;
 
   let pkParam = req.params.id || 0;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
   let sql = `CALL as_sp_updateBrand( ${pkParam}, 
-    ${body.fkCategory || ""},   
-    '${body.nameBrand || ""}',   
+    ${body.fkCategory},   
+    '${body.nameBrand}',   
     ${pkUserToken} ,  
     '${reqIp.getClientIp(req)}' );`;
 
@@ -71,19 +106,20 @@ BrandRouter.put("/updateBrand/:id", (req: any, res: Response) => {
     }
     res.json({
       ok: true,
+      showError: data[0].showError,
       data: data[0],
     });
   });
 });
 
 BrandRouter.delete(
-  "/deleteBrand/:id/:statusRegister",
+  "/Brand/Delete/:id/:statusRegister",
   (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;
     let sql = `CALL as_sp_deleteBrand( '${pkParam}', 
-    '${status}',
+    ${status},
     ${pkUserToken} , 
     '${reqIp.getClientIp(req)}' );`;
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
@@ -95,6 +131,7 @@ BrandRouter.delete(
       }
       res.json({
         ok: true,
+        showError: data[0].showError,
         data: data[0],
       });
     });
