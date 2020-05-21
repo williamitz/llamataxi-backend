@@ -5,7 +5,6 @@ import jwt from 'jsonwebtoken';
 import { IBodyUser } from '../interfaces/body_user.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { SEED_KEY } from '../global/environments.global';
-import { verifyToken } from '../middlewares/token.mdd';
 
 const Mysql = MysqlClass.instance;
 
@@ -94,7 +93,7 @@ AuthRoutes.post('/login', (req: Request, res: Response) => {
         
         let token = '';
         let showError = data[0].showError;
-        if (showError != 1) {
+        if (showError === 0) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
                 return res.json({
@@ -118,6 +117,48 @@ AuthRoutes.post('/login', (req: Request, res: Response) => {
 
     });
 
+});
+
+AuthRoutes.post('/Login/Web', (req: Request, res: Response) => {
+    let body: IBodyUser = req.body;
+
+    let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+
+    let sql = `CALL as_sp_loginWeb( '${ body.userName }', '${ passEncrypt }' );`;
+
+    Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+        
+        let token = '';
+        let showError = data[0].showError;
+        if (showError === 0) {
+
+            if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
+                return res.json({
+                    ok: true,
+                    showError: showError + 2,
+                });
+            }
+
+            delete data[0].userPassword;
+            delete data[0].showError;
+
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+        }
+
+        res.json({
+            ok: true,
+            showError,
+            data: data[0],
+            token
+        });
+
+    });
 });
 
 AuthRoutes.get('/nationality/GetAll', (req: Request, res: Response) => {
@@ -184,6 +225,34 @@ AuthRoutes.post('/authorization', (req: Request, res: Response) => {
     });
     
 
+});
+
+AuthRoutes.post('/auth/token', (req: Request, res: Response) => {
+    let token = req.get('Authorization') || 'xD';
+    let rolesInvalid = ['CLIENT_ROLE', 'DRIVER_ROLE'];
+
+    jwt.verify( token, SEED_KEY, (error, decoded: any) => {
+        if (error) {
+            return res.json({
+                ok: false,
+                error
+            });
+        }
+
+        if ( rolesInvalid.includes(decoded.dataUser.role) ) {
+            
+            return res.json({
+                ok: false,
+                error: {
+                    message: 'No tiene permisos para ingresar a la web'
+                }
+            });
+        }
+
+        res.json({
+            ok: true
+        });
+    });
 });
 
 

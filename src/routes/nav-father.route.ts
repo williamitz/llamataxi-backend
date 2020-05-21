@@ -8,12 +8,14 @@ let NavFatherRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 // middlware , verifyToken
-NavFatherRouter.get("/NavFather/Get", (req: any, res: Response) => {
+
+NavFatherRouter.get("/NavFather/Get", [verifyToken], (req: any, res: Response) => {
   let page = req.query.page || 1;
-  let q = req.query.q || "";
+  let q = req.query.q || '';
   let showInactive = req.query.showInactive || true;
-  let sql = `CALL as_sp_getListNavFather(${page},'${q}',
-      ${showInactive});`;
+
+  let sql = `CALL as_sp_getListNavFather(${ page },'${ q }', ${ showInactive });`;
+
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -21,11 +23,9 @@ NavFatherRouter.get("/NavFather/Get", (req: any, res: Response) => {
         error,
       });
     }
-    let sqlOverall = `CALL as_sp_overallPageNavFather('${q}', ${showInactive});`;
+    let sqlOverall = `CALL as_sp_overallPageNavFather('${ q }', ${ showInactive });`;
 
-    MysqlCon.onExecuteQuery(
-      sqlOverall,
-      (errorOverall: any, dataOverall: any[]) => {
+    MysqlCon.onExecuteQuery( sqlOverall, (errorOverall: any, dataOverall: any[]) => {
         if (errorOverall) {
           return res.status(400).json({
             ok: false,
@@ -35,7 +35,7 @@ NavFatherRouter.get("/NavFather/Get", (req: any, res: Response) => {
 
         res.json({
           ok: true,
-          data: data,
+          data,
           total: dataOverall[0].total,
         });
       }
@@ -43,7 +43,7 @@ NavFatherRouter.get("/NavFather/Get", (req: any, res: Response) => {
   });
 });
 
-NavFatherRouter.post("/NavFather/Add", (req: any, res: Response) => {
+NavFatherRouter.post("/NavFather/Add", [verifyToken], (req: any, res: Response) => {
   let body: INavFather = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
@@ -67,7 +67,7 @@ NavFatherRouter.post("/NavFather/Add", (req: any, res: Response) => {
   });
 });
 
-NavFatherRouter.put("/NavFather/Update/:id", (req: any, res: Response) => {
+NavFatherRouter.put("/NavFather/Update/:id", [verifyToken], (req: any, res: Response) => {
   let body: INavFather = req.body;
 
   let pkParam = req.params.id || 0;
@@ -93,16 +93,13 @@ NavFatherRouter.put("/NavFather/Update/:id", (req: any, res: Response) => {
   });
 });
 
-NavFatherRouter.delete(
-  "/NavFather/Delete/:id/:statusRegister",
-  (req: any, res: Response) => {
-    let pkParam = req.params.id || 0;
+NavFatherRouter.delete( "/NavFather/Delete/:id/:statusRegister", [verifyToken], (req: any, res: Response) => {
+    let pkNavPather = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;
-    let sql = `CALL as_sp_deleteNavFather( '${pkParam}', 
-    ${status},
-    ${pkUserToken} , 
-    '${reqIp.getClientIp(req)}' );`;
+
+    let sql = `CALL as_sp_deleteNavFather( ${pkNavPather}, ${status}, ${pkUserToken} , '${reqIp.getClientIp(req)}' );`;
+    
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
       if (error) {
         return res.status(400).json({

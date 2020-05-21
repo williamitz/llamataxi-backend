@@ -12,7 +12,7 @@ MessageRouter.post('/Message/Add', [verifyToken], (req: any, res: Response) => {
     let body: IMessage = req.body;
     let fkUser = req.userData.pkUser || 0;
 
-    let sql = `CALL as_sp_addMessage( ${body.fkUserEmisor}, ${body.fkUserReceptor}, '${body.subject}', '${ body.message }', '${ body.tags }',  ${fkUser}, '${reqIp.getClientIp(req)}' );`;
+    let sql = `CALL as_sp_addMessage( ${fkUser}, ${body.fkUserReceptor}, '${body.subject}', '${ body.message }', '${ body.tags }',  ${fkUser}, '${reqIp.getClientIp(req)}' );`;
     
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
         if (error) {
@@ -38,6 +38,7 @@ MessageRouter.get('/Message/Get', [verifyToken], (req: Request, res: Response) =
     let rowsForPage = req.query.rowsForPage || 10;
     let showInactive = req.query.showInactive.toString() || 'true';
 
+    
     let statusValid = ['true', 'false'];
     if (!statusValid.includes( showInactive )) {
         return res.status(400).json({
@@ -59,7 +60,7 @@ MessageRouter.get('/Message/Get', [verifyToken], (req: Request, res: Response) =
         }
 
         let sqlOverall = `CALL as_sp_overallPageMessages(${ pkUser }, ${showInactive});`;
-        MysqlCon.onExecuteQuery(sql, (errorOverall: any, dataOverall: any[]) => {
+        MysqlCon.onExecuteQuery(sqlOverall, (errorOverall: any, dataOverall: any[]) => {
             if (errorOverall) {
               return res.status(400).json({
                 ok: false,
@@ -75,5 +76,50 @@ MessageRouter.get('/Message/Get', [verifyToken], (req: Request, res: Response) =
         });
     });
 });
+
+MessageRouter.get('/Message/Get/Response/:id', [verifyToken], (req: Request, res: Response) => {
+
+  let pkMessage = req.params.id || 0;
+
+  let sql = `CALL as_sp_getListResponses( ${ pkMessage } );`;
+  
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+      if (error) {
+        return res.status(400).json({
+          ok: false,
+          error,
+        });
+      }
+
+      res.json({
+        ok: true,
+        data
+      });
+  });
+});
+
+MessageRouter.post('/Message/Add/Response', [verifyToken], (req: any, res: Response) => {
+  let body: IMessage = req.body;
+  let fkUser = req.userData.pkUser || 0;
+
+  let sql = `CALL as_sp_addResponseMsg( ${ body.pkMessage }, ${fkUser}, ${body.fkUserReceptor}, '${ body.message }',  ${fkUser}, '${reqIp.getClientIp(req)}' );`;
+  
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+      if (error) {
+        return res.status(400).json({
+          ok: false,
+          error,
+        });
+      }
+  
+      res.json({
+        ok: true,
+        showError: data[0].showError,
+        data: data[0],
+      });
+  
+  });
+});
+
 
 export default MessageRouter;

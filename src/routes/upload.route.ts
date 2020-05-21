@@ -109,13 +109,15 @@ function updatedImgUser( pkUser: number, nameFile: string, req: Request , res: R
     });
 
 }
-
-
 UploadRoutes.put('/upload/driver/:entity/:id/:document', [verifyToken], (req: any, res: Response) => {
     let entity = req.params.entity.toUpperCase() || '';
     let idEntity = Number( req.params.id ) || 0;
     let document = req.params.document.toUpperCase() || '';
+    let admin = req.query.admin || 'false';
     let pkDriver = req.userData.pkDriver || 0;
+    if (admin === 'true') {
+        pkDriver = req.query.pkDriver;
+    }
     
     let entitysValid = ['DRIVER', 'VEHICLE'];
     let imgValid = ['jpg', 'png', 'jpeg', 'pdf'];
@@ -234,6 +236,7 @@ function updateFileDriver( entity: string, idEntity: number, document: string, i
         res.json({
             ok: true,
             data: data[0],
+            newFile: img,
             message: 'Se subió exitosamente'
         });
     });

@@ -13,10 +13,9 @@ ModelRouter.get("/Model/Get", (req: Request, res: Response) => {
   let fkBrand = req.query.fkBrand || 0;
   let nameModel = req.query.nameModel || "";
   let showInactive = req.query.showInactive || true;
-  let sql = `CALL as_sp_getListModel(${page},'${fkCategory}',
-  '${fkBrand}',
-  '${nameModel}',
-  ${showInactive});`;
+
+  let sql = `CALL as_sp_getListModel(${page},'${fkCategory}', '${fkBrand}', '${nameModel}', ${showInactive});`;
+
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -24,13 +23,11 @@ ModelRouter.get("/Model/Get", (req: Request, res: Response) => {
         error,
       });
     }
-    let sqlOverall = `CALL as_sp_overallPageModel('${fkCategory}',
-    '${fkBrand}',
-    '${nameModel}',${showInactive});`;
 
-    MysqlCon.onExecuteQuery(
-      sqlOverall,
-      (errorOverall: any, dataOverall: any[]) => {
+    let sqlOverall = `CALL as_sp_overallPageModel('${fkCategory}', '${fkBrand}', '${nameModel}',${showInactive});`;
+
+    MysqlCon.onExecuteQuery( sqlOverall, (errorOverall: any, dataOverall: any[]) => {
+
         if (errorOverall) {
           return res.status(400).json({
             ok: false,
@@ -43,12 +40,17 @@ ModelRouter.get("/Model/Get", (req: Request, res: Response) => {
           data: data,
           total: dataOverall[0].total,
         });
+
       }
     );
   });
 });
+
 ModelRouter.get("/Model/GetAll", (req: Request, res: Response) => {
-  let sql = `CALL as_sp_getListModelAll();`;
+  let fkCategory = req.query.fkCategory || 0;
+  let fkBrand = req.query.fkBrand || 0;
+
+  let sql = `CALL as_sp_getListModelAll(${ fkCategory }, ${ fkBrand });`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -62,28 +64,28 @@ ModelRouter.get("/Model/GetAll", (req: Request, res: Response) => {
     });
   });
 });
+
 ModelRouter.post("/Model/Add", (req: any, res: Response) => {
   let body: IBodyModel = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_addModel( ${body.fkCategory || ""},
-    ${body.fkBrand || ""},
-    '${body.nameModel || ""}',
-     ${pkUserToken} , 
-    '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL as_sp_addModel( ${body.fkCategory}, ${body.fkBrand}, '${body.nameModel}', ${pkUserToken} , '${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
         error,
       });
     }
+
     res.json({
       ok: true,
       showError: data[0].showError,
       data: data[0],
     });
+
   });
 });
 

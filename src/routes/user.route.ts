@@ -101,7 +101,7 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
 UserRouter.post('/User/Add', [verifyToken, verifyWebmasterRole], (req: any, res: Response) => {
     let body: IBodyUser = req.body;
     let fkUser = req.userData.pkUser || 0;
-    let rolesValid = ['ADMIN_ROLE', 'ATENTION_ROLE'];
+    let rolesValid = ['ADMIN_ROLE', 'ATTENTION_ROLE'];
 
     if (!rolesValid.includes( body.role )) {
         return res.status(400).json({
@@ -139,5 +139,23 @@ UserRouter.post('/User/Add', [verifyToken, verifyWebmasterRole], (req: any, res:
 
 });
 
+UserRouter.get('/User/Profile/:pkUser', [verifyToken, verifyWebmasterRole], (req: Request, res: Response) => {
+    let pkUser = req.params.pkUser || 0;
+    let sql =  `CALL as_sp_getProfileUser(${ pkUser });`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data: data[0]
+        });
+    });
+});
 
 export default UserRouter;

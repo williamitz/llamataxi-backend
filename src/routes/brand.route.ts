@@ -9,13 +9,14 @@ let BrandRouter = Router();
 let MysqlCon = MysqlClass.instance;
 
 BrandRouter.get("/Brand/Get", (req: Request, res: Response) => {
-  let page = req.query.page || 1;
-  let fkCategory = req.query.fkCategory || 0;
-  let nameBrand = req.query.nameBrand || "";
+  let page = Number( req.query.page ) || 1;
+  let qCategory = req.query.qCategory || "";
+  let qBrand = req.query.qBrand || "";
+  
+
   let showInactive = req.query.showInactive || true;
-  let sql = `CALL as_sp_getListBrand(${page},${fkCategory},
-  '${nameBrand}',
-  ${showInactive});`;
+
+  let sql = `CALL as_sp_getListBrand(${page}, '${qCategory}', '${ qBrand }', ${showInactive});`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -23,13 +24,9 @@ BrandRouter.get("/Brand/Get", (req: Request, res: Response) => {
         error,
       });
     }
-    let sqlOverall = `CALL as_sp_overallPageBrand(${fkCategory},
-      '${nameBrand}',
-      ${showInactive});`;
+    let sqlOverall = `CALL as_sp_overallPageBrand( '${qCategory}', '${ qBrand }', ${showInactive});`;
 
-    MysqlCon.onExecuteQuery(
-      sqlOverall,
-      (errorOverall: any, dataOverall: any[]) => {
+    MysqlCon.onExecuteQuery(sqlOverall, (errorOverall: any, dataOverall: any[]) => {
         if (errorOverall) {
           return res.status(400).json({
             ok: false,
@@ -39,27 +36,36 @@ BrandRouter.get("/Brand/Get", (req: Request, res: Response) => {
 
         res.json({
           ok: true,
-          data: data,
+          data,
           total: dataOverall[0].total,
         });
       }
     );
   });
 });
+
 BrandRouter.get("/Brand/GetAll", (req: Request, res: Response) => {
-  let sql = `CALL as_sp_getListBrandAll();`;
+
+  let fkCategory = req.query.fkCategory || 0;
+
+  let sql = `CALL as_sp_getListBrandAll(${ fkCategory });`;
+
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
         error,
       });
     }
+
     res.json({
       ok: true,
       data: data,
     });
+
   });
+
 });
 BrandRouter.post("/Brand/Add", (req: any, res: Response) => {
   let body: IBodyBrand = req.body;

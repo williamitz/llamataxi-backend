@@ -10,7 +10,7 @@ export default class MainServer {
     app: express.Application;
     port: number;
 
-    private _io: SocketIO.Server;
+    io: SocketIO.Server;
     private _httpServer: http.Server;
 
     constructor() {
@@ -18,15 +18,15 @@ export default class MainServer {
         this.port = PORT;
 
         this._httpServer = new http.Server( this.app );
-        this._io = SocketIO( this._httpServer );
+        this.io = SocketIO( this._httpServer );
         this.listenSockets();
     }
 
     private listenSockets(){
-        this._io.on('connect', (client) => {
+        this.io.on('connect', (client) => {
             mainSocket.connectUser( client );
-            mainSocket.disconnectUser( client );
-            mainSocket.singUser( client );
+            mainSocket.disconnectUser( client, this.io );
+            mainSocket.singUser( client, this.io  );
         });
     }
 

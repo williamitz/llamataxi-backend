@@ -5,4 +5,5 @@ export interface IBodyNavChildren {
   navChildrenPath: string;
   navChildrenIcon: string;
   statusRegister: number;
+  isVisible: boolean;
 }
