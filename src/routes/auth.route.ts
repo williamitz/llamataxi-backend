@@ -15,7 +15,7 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
 
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
     
-    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.userName }', '${ passEncrypt }', 'USER_CLIENT_ROLE', ${ body.google }, 0, '${ reqIp.getClientIp( req ) }' );`;
+    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.userName }', '${ passEncrypt }', 'CLIENT_ROLE', ${ body.google }, 0, '${ reqIp.getClientIp( req ) }' );`;
 
     Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) { 

@@ -27,7 +27,7 @@ export let verifyWebmasterRole = ( req: any, res: Response, next: NextFunction )
     
     let role = req.userData.role || 'xD';
 
-    let rolesAllow = ['WEBMASTER_ROLE', 'ADMIN_ROLE'];
+    let rolesAllow = ['WEBMASTER_ROLE', 'ADMIN_ROLE', 'ATTENTION_ROLE'];
 
     if ( !rolesAllow.includes( role )) {
         return res.status(401).json({

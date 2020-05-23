@@ -52,37 +52,58 @@ export class ListUserSockets {
         return true;
     }
 
-    onGetAdminSort() {
-        let usersAdmin = this.listUser.filter( user => user.role === 'ADMIN_ROLE' );
-        
+    onGetAdminSort( role: string ) {
+        let usersAdmin = this.listUser.filter( user => user.role === role );
+        let newArr: UserSocket[] = [];
+        let idsArr: number[] = [];
+        usersAdmin.forEach( u => {
+            if (!idsArr.includes( u.pkUser )) {
+                newArr.push(u);
+            }
+        });
+
         if (usersAdmin.length === 0) {
             return null;
         }
 
-        if (usersAdmin.length === 1) {
-            return usersAdmin[0];
+        if (newArr.length === 1) {
+            return newArr[0];
         }
+
         
-        for (let i = 0; i < usersAdmin.length - 2; i++) {
+        for (let i = 0; i < newArr.length - 2; i++) {
             
-            const useri = usersAdmin[i];
+            const useri = newArr[i];
 
-            for (let j = i + 1; j < usersAdmin.length - 1; j++) {
+            for (let j = i + 1; j < newArr.length - 1; j++) {
 
-                const userj = usersAdmin[j];
+                const userj = newArr[j];
 
                 if (useri.timer > userj.timer) {
-                    usersAdmin = usersAdmin.filter( user => user.id !== userj.id );
-                    usersAdmin.unshift( userj );
+                    newArr = newArr.filter( user => user.id !== userj.id );
+                    newArr.unshift( userj );
                 }
                 
             }
             
         }
 
-        return usersAdmin[0];
+        return newArr[0];
 
     }
 
+    onFindUser( id: string ) {
+        return this.listUser.find( u => u.id === id );
+    }
 
+    onUpdateTime( id: string ) {
+        const finded = this.listUser.find( user => user.id === id  );
+        if (!finded) {
+            console.error('No se encontró usuario socket');
+            return false;
+        }
+
+        finded.timer = new Date().getTime();
+        return true;
+    }
 }

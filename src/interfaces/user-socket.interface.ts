@@ -4,5 +4,6 @@ export interface IUserSocket {
     role: string;
     osID?: string;
     device: string;
+    room?: string;
   }
   

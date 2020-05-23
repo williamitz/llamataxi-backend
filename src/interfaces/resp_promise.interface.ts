@@ -3,4 +3,5 @@ export default interface IResponse {
     error?: any;
     data?: any;
     showError?: number;
+    socket?: string;
 }

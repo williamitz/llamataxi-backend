@@ -17,7 +17,7 @@ export default class MainServer {
         this.app = express();
         this.port = PORT;
 
-        this._httpServer = new http.Server( this.app );
+        this._httpServer = http.createServer( this.app );
         this.io = SocketIO( this._httpServer );
         this.listenSockets();
     }
@@ -27,6 +27,7 @@ export default class MainServer {
             mainSocket.connectUser( client );
             mainSocket.disconnectUser( client, this.io );
             mainSocket.singUser( client, this.io  );
+            mainSocket.sendNotify( client, this.io );
         });
     }
 
