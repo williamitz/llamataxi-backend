@@ -80,7 +80,7 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
 }
 
 export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('disconnect', () => {
+    client.on('disconnect', (payload, callback) => {
         const userDelete = listUser.onDeleteUser( client.id );
         client.leave( userDelete.device, (err: any) => {
             if (err) {
@@ -90,10 +90,14 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
         io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
         onSingSocketDB(userDelete.pkUser, userDelete.osID, false).then( (resSql) => {
 
-            
+            callback( resSql );
             console.log('Se desconecto un usuario');
             
         }).catch( e => {
+            callback({
+                ok: false,
+                error: e
+            });
             console.error('Error al procesar sql', e);
         });
     });
