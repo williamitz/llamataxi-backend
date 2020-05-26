@@ -48,7 +48,7 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
     let sql = `CALL as_sp_addDriver(${ body.fkTypeDocument }, ${ body.fkNationality }`;
     sql += `,'${ body.name }', '${ body.surname }', '${ body.document }' `;
     sql += `, ${ body.verifyReniec }, '${ body.email }', '${ body.phone }' `;
-    sql += `, '${ body.brithDate }', '${ body.sex }', '${ body.userName }', '${ passEncrypt }' `;
+    sql += `, '${ body.dateBirth }', '${ body.sex }', '${ body.userName }', '${ passEncrypt }' `;
     sql += `, 'DRIVER_ROLE', ${ body.google }, '${ body.dateLicenseExpiration }', ${ body.isEmployee } `;
     sql += `, '${ body.numberPlate }', ${ body.year }, '${ body.color }', '${ body.dateSoatExpiration }' `;
     sql += `, ${ body.isProper }, 0, '${ reqIp.getClientIp(req) }');`;
@@ -88,11 +88,12 @@ AuthRoutes.post('/login', (req: Request, res: Response) => {
             return res.status(400).json({
                 ok: false,
                 error
-            });
+            }); 
         }
-        
+
+
         let token = '';
-        let showError = data[0].showError;
+        let showError = data[0].showError || 0;
         if (showError === 0) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
@@ -125,7 +126,6 @@ AuthRoutes.post('/Login/Web', (req: Request, res: Response) => {
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
 
     let sql = `CALL as_sp_loginWeb( '${ body.userName }', '${ passEncrypt }' );`;
-
     Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) {
             return res.status(400).json({
@@ -134,8 +134,9 @@ AuthRoutes.post('/Login/Web', (req: Request, res: Response) => {
             });
         }
         
+
         let token = '';
-        let showError = data[0].showError;
+        let showError = data[0].showError || 0;
         if (showError === 0) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
