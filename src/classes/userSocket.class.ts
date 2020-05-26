@@ -6,7 +6,6 @@ export class UserSocket {
     public timer: number;
     public device: string;
     public osID: string;
-    public room: string;
 
     constructor( id: string ) {
         this.id = id;
@@ -16,7 +15,6 @@ export class UserSocket {
         this.timer = 0;
         this.device = '';
         this.osID = '';
-        this.room = '';
     }
 
 }

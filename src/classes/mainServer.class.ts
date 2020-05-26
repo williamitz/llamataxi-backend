@@ -1,10 +1,11 @@
 import express from 'express';
-import { PORT } from '../global/environments.global';
 import SocketIO from 'socket.io';
 import http from 'http';
+import path from 'path';
+import { PORT } from '../global/environments.global';
 import * as mainSocket from '../sockets/socket';
-
 export default class MainServer {
+
     
     private static _instance: MainServer;
     app: express.Application;
@@ -16,7 +17,7 @@ export default class MainServer {
     constructor() {
         this.app = express();
         this.port = PORT;
-
+        
         this._httpServer = http.createServer( this.app );
         this.io = SocketIO( this._httpServer );
         this.listenSockets();
@@ -35,8 +36,14 @@ export default class MainServer {
         return this._instance || ( this._instance = new this() );
     }
 
+    private loadPublic() {
+        let publicPath = path.resolve( __dirname , '../public' );
+        this.app.use( express.static( publicPath ) );
+    }
+
     onRun( callback: Function ) {
         this._httpServer.listen( this.port, callback() );
+        this.loadPublic();
     }
 
 

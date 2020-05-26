@@ -6,7 +6,7 @@ export interface IBodyUser {
     name: string;
     surname: string;
     document: string;
-    brithDate: string;
+    dateBirth: string;
     email?: string;
     phone?: string;
     sex?: string;
