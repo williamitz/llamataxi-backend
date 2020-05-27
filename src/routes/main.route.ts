@@ -16,6 +16,8 @@ import DriverRoutes from "./driver.route";
 import MessageRouter from './message.route';
 import TaxiServiceRouter from './taxi-service.route';
 
+import JournalRouter from './journal.route';
+import RateRouter from './rate.route';
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -33,6 +35,10 @@ MainRouter.use(UserRouter);
 MainRouter.use(FilesRouter);
 MainRouter.use(DriverRoutes);
 MainRouter.use(MessageRouter);
+
 MainRouter.use( TaxiServiceRouter )
+
+MainRouter.use(JournalRouter);
+MainRouter.use(RateRouter);
 
 export default MainRouter;
