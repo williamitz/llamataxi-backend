@@ -1,8 +1,9 @@
 export interface IBodyJournal {
     pkJournal?: number;
     nameJournal: string;
-    hour_start: string;
-    hour_end: string;
+    codeJournal: string;
+    hourStart: string;
+    hourEnd: string;
     statusRegister: number;
   }
   

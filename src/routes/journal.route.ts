@@ -48,8 +48,9 @@ JournalRouter.post("/Journal/Add", (req: any, res: Response) => {
 
   let pkUserToken = 1; //req.userData.pkUser || 0;
   let sql = `CALL cc_sp_addJournal( '${body.nameJournal || ""}', 
-    '${body.hour_start || ""}',
-    '${body.hour_end || ""}',  
+    '${body.codeJournal || ""}',
+    '${body.hourStart || ""}',
+    '${body.hourEnd || ""}',  
      ${pkUserToken} , 
     '${reqIp.getClientIp(req)}' );`;
 
@@ -76,8 +77,9 @@ JournalRouter.put("/Journal/Update/:id", (req: any, res: Response) => {
 
   let sql = `CALL cc_sp_updateJournal( ${pkParam}, 
     '${body.nameJournal || ""}',      
-    '${body.hour_start || ""}',
-    '${body.hour_end || ""}',   
+    '${body.codeJournal || ""}',
+    '${body.hourStart || ""}',
+    '${body.hourEnd || ""}',  
     ${pkUserToken} ,  
     '${reqIp.getClientIp(req)}' );`;
 

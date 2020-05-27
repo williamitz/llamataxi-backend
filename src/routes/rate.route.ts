@@ -11,11 +11,10 @@ let MysqlCon = MysqlClass.instance;
 RateRouter.get("/Rate/Get", (req: Request, res: Response) => {
   let page = Number( req.query.page ) || 1;
   let qCategory = req.query.qCategory || "";
-  let qRate = req.query.qRate || ""; 
+  let qJournal = req.query.qJournal || ""; 
 
   let showInactive = req.query.showInactive || true;
-
-  let sql = `CALL cc_sp_getListRate(${page}, '${qCategory}', '${ qRate }', ${showInactive});`;
+  let sql = `CALL cc_sp_getListRate(${page}, '${qCategory}', '${ qJournal }', ${showInactive});`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -23,7 +22,7 @@ RateRouter.get("/Rate/Get", (req: Request, res: Response) => {
         error,
       });
     }
-    let sqlOverall = `CALL cc_sp_overallPageRate( '${qCategory}', '${ qRate }', ${showInactive});`;
+    let sqlOverall = `CALL cc_sp_overallPageRate( '${qCategory}', '${ qJournal }', ${showInactive});`;
 
     MysqlCon.onExecuteQuery(sqlOverall, (errorOverall: any, dataOverall: any[]) => {
         if (errorOverall) {
