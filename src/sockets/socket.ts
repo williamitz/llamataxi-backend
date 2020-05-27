@@ -50,10 +50,10 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         }).catch( e => {
 
             console.error('Error al procesar sql', e);
-            callback({
-                ok: false,
-                data: e
-            });
+            // callback({
+            //     ok: false,
+            //     data: e
+            // });
         });
     });
 };
@@ -85,7 +85,7 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
 }
 
 export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('disconnect', (payload, callback) => {
+    client.on('disconnect', (payload, callback: any) => {
         const userDelete = listUser.onDeleteUser( client.id );
         client.leave( userDelete.device, (err: any) => {
             if (err) {
@@ -94,15 +94,15 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
         });
         io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
         onSingSocketDB(userDelete.pkUser, userDelete.osID, false).then( (resSql) => {
-
-            callback( resSql );
-            console.log('Se desconecto un usuario');
+            
+            // callback( {ok:true, data: resSql} );
+            console.log('Se desconecto un usuario', resSql);
             
         }).catch( e => {
-            callback({
-                ok: false,
-                error: e
-            });
+            // callback({
+            //     ok: false,
+            //     error: e
+            // });
             console.error('Error al procesar sql', e);
         });
     });

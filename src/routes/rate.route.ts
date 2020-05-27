@@ -8,7 +8,7 @@ let RateRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-RateRouter.get("/Rate/Get", (req: Request, res: Response) => {
+RateRouter.get("/Rate/Get", [verifyToken], (req: Request, res: Response) => {
   let page = Number( req.query.page ) || 1;
   let qCategory = req.query.qCategory || "";
   let qJournal = req.query.qJournal || ""; 
@@ -31,7 +31,6 @@ RateRouter.get("/Rate/Get", (req: Request, res: Response) => {
             error: errorOverall,
           });
         }
-
         res.json({
           ok: true,
           data,
@@ -42,7 +41,7 @@ RateRouter.get("/Rate/Get", (req: Request, res: Response) => {
   });
 });
 
-RateRouter.get("/Rate/GetAll", (req: Request, res: Response) => {
+RateRouter.get("/Rate/GetAll", [verifyToken], (req: Request, res: Response) => {
 
   let fkCategory = req.query.fkCategory || 0;
 
@@ -65,15 +64,11 @@ RateRouter.get("/Rate/GetAll", (req: Request, res: Response) => {
   });
 
 });
-RateRouter.post("/Rate/Add", (req: any, res: Response) => {
+RateRouter.post("/Rate/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyRate = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL cc_sp_addRate( ${body.fkCategory},    
-    ${body.fkJournal},
-    ${body.priceRate},
-     ${pkUserToken} , 
-    '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL cc_sp_addRate( ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${pkUserToken},'${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
@@ -90,56 +85,54 @@ RateRouter.post("/Rate/Add", (req: any, res: Response) => {
   });
 });
 
-RateRouter.put("/Rate/Update/:id", (req: any, res: Response) => {
+RateRouter.put("/Rate/Update/:id", [verifyToken], (req: any, res: Response) => {
   let body: IBodyRate = req.body;
 
   let pkParam = req.params.id || 0;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL cc_sp_updateRate( ${pkParam}, 
-    ${body.fkCategory},   
-    ${body.fkJournal},
-    ${body.priceRate},   
-    ${pkUserToken} ,  
-    '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL cc_sp_updateRate( ${pkParam}, ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${pkUserToken}, '${reqIp.getClientIp(req)}');`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
         error,
       });
     }
+
     res.json({
       ok: true,
       showError: data[0].showError,
       data: data[0],
     });
+
   });
 });
 
-RateRouter.delete(
-  "/Rate/Delete/:id/:statusRegister",
-  (req: Request, res: Response) => {
+RateRouter.delete("/Rate/Delete/:id/:statusRegister", [verifyToken], (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;
-    let sql = `CALL cc_sp_deleteRate( '${pkParam}', 
-    ${status},
-    ${pkUserToken} , 
-    '${reqIp.getClientIp(req)}' );`;
+
+    let sql = `CALL cc_sp_deleteRate( '${pkParam}', ${status}, ${pkUserToken}, '${reqIp.getClientIp(req)}' );`;
+
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
       if (error) {
         return res.status(400).json({
           ok: false,
           error,
         });
       }
+
       res.json({
         ok: true,
         showError: data[0].showError,
         data: data[0],
       });
+
     });
   }
 );
