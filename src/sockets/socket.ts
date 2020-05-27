@@ -48,7 +48,12 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
             });
             
         }).catch( e => {
+
             console.error('Error al procesar sql', e);
+            callback({
+                ok: false,
+                data: e
+            });
         });
     });
 };

@@ -3,7 +3,6 @@ import cors from 'cors';
 import MainRouter from './routes/main.route';
 import MainServer from './classes/mainServer.class';
 import MysqlClass from './classes/mysqlConnect.class';
-
 const server = MainServer.instance;
 
 

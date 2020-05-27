@@ -14,6 +14,7 @@ import NavFatherRouter from "./nav-father.route";
 import FilesRouter from "./files.route";
 import DriverRoutes from "./driver.route";
 import MessageRouter from './message.route';
+import TaxiServiceRouter from './taxi-service.route';
 
 let MainRouter = Router();
 
@@ -32,5 +33,6 @@ MainRouter.use(UserRouter);
 MainRouter.use(FilesRouter);
 MainRouter.use(DriverRoutes);
 MainRouter.use(MessageRouter);
+MainRouter.use( TaxiServiceRouter )
 
 export default MainRouter;

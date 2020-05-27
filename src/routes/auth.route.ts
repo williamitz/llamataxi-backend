@@ -6,6 +6,7 @@ import { IBodyUser } from '../interfaces/body_user.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { SEED_KEY } from '../global/environments.global';
 
+
 const Mysql = MysqlClass.instance;
 
 let AuthRoutes = Router();
