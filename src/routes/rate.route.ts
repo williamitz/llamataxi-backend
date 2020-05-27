@@ -1,5 +1,6 @@
 import { Request, Response, Router } from "express";
-import { IBodyRate } from "./../interfaces/body_Rate.interface";
+
+import { IBodyRate } from '../interfaces/body_rate.interface';
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
