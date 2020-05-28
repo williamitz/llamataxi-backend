@@ -3,6 +3,7 @@ export interface IBodyRate {
     fkCategory: number;
     fkJournal: number;
     priceRate: number;
+    priceMin: number;
     statusRegister: number;
   }
   

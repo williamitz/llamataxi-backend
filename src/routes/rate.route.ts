@@ -1,5 +1,4 @@
 import { Request, Response, Router } from "express";
-
 import { IBodyRate } from '../interfaces/body_rate.interface';
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
@@ -69,7 +68,7 @@ RateRouter.post("/Rate/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyRate = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL cc_sp_addRate( ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${pkUserToken},'${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL cc_sp_addRate( ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${ body.priceMin }, ${pkUserToken},'${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
@@ -92,7 +91,7 @@ RateRouter.put("/Rate/Update/:id", [verifyToken], (req: any, res: Response) => {
   let pkParam = req.params.id || 0;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL cc_sp_updateRate( ${pkParam}, ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${pkUserToken}, '${reqIp.getClientIp(req)}');`;
+  let sql = `CALL cc_sp_updateRate( ${pkParam}, ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${ body.priceMin }, ${pkUserToken}, '${reqIp.getClientIp(req)}');`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
