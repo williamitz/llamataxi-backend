@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { verifyToken, verifyWebmasterRole } from '../middlewares/token.mdd';
-import { IBodyUser } from '../interfaces/body_user.interface';
+import { IBodyUser, IUserProfile } from '../interfaces/body_user.interface';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
 import bcrypt from 'bcrypt';
@@ -153,6 +153,38 @@ UserRouter.get('/User/Profile/:pkUser', [verifyToken, verifyWebmasterRole], (req
 
         res.json({
             ok: true,
+            data: data[0]
+        });
+    });
+});
+
+UserRouter.put('/User/Profile/Update', [verifyToken], (req: any, res: Response) => {
+    let body: IUserProfile = req.body;
+    let pkUserToken = req.userData.pkUser || 0;
+
+    /**
+     * IN `InPkUser` int,
+        IN `InFkTypeDoc` int,
+        IN `InDocument` varchar(15),
+
+        IN `InFkUser` int,
+        IN `InIpUser` varchar(20)
+     */
+
+    // alt + 96 
+    let sql = `CALL as_sp_updateProfileUser( ${ body.pkUser }, ${ body.fkTypeDocument }, '${ body.document }', ${ pkUserToken }, '${ reqIp.getClientIp( req ) }' );`;
+
+    MysqlCnn.onExecuteQuery( sql, ( error: any, data: any[] ) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
             data: data[0]
         });
     });

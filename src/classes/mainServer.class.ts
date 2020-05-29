@@ -22,6 +22,7 @@ export default class MainServer {
     private _httpServer: http.Server;
     private journal: string;
     private journal_db: IJournalDB[];
+    private pkJournal: number;
 
     constructor() {
         this.app = express();
@@ -32,6 +33,7 @@ export default class MainServer {
         this.listenSockets();
         this.journal = 'NOCTURN';
         this.journal_db = [];
+        this.pkJournal = 0;
     }
 
     private listenSockets(){
@@ -66,6 +68,7 @@ export default class MainServer {
 
             this.journal_db.forEach( journal => {
                 if (hour >= journal.hourStart && hour <= journal.hourEnd) {
+                    this.pkJournal = journal.pkJournal;
                     console.log('jornada', journal.nameJournal);
                     if (this.journal !== journal.codeJournal) {
                         console.log('notificar con socket');

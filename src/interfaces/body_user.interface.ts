@@ -30,3 +30,9 @@ export interface IBodyUser {
     numberPlate?: string;
     year?: number;
 }
+
+export interface IUserProfile {
+    pkUser: number;
+    fkTypeDocument: number;
+    document: string;
+}
