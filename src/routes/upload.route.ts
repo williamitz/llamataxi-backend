@@ -162,11 +162,9 @@ UploadRoutes.put('/upload/driver/:entity/:id/:document', [verifyToken], (req: an
         });
     }
 
-    // console.log(file);
+
     let arrName = file.name.split('.');
     let extensionFile = arrName[ arrName.length - 1 ].toLowerCase();
-    console.log(arrName);
-    console.log(extensionFile);
 
     if ( !imgValid.includes( extensionFile ) ) {
         return res.status(400).json({
@@ -194,7 +192,6 @@ UploadRoutes.put('/upload/driver/:entity/:id/:document', [verifyToken], (req: an
     }
 
     let img = `${ document }-${ time }.${ extensionFile }`;
-    console.log(img);
     pathImg = path.resolve( pathImg , img);
 
     file.mv(pathImg, (error: any) => {

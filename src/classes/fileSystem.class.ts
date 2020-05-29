@@ -11,12 +11,13 @@ export default class FileSystem {
         if (!fs.existsSync(pathDriver)) {
             fs.mkdirSync( pathDriver );
         }
-
+ 
         return pathDriver;
     }
 
     public static buildPathVehicle( pkDriver: number, pkVehicle: number ): string {
-
+        
+        this.buildPathDriver( pkDriver );
         let pathVehicle = path.resolve( __dirname, `../upload/driver/${pkDriver}/vehicle-${pkVehicle}` );
 
         if (!fs.existsSync(pathVehicle)) {

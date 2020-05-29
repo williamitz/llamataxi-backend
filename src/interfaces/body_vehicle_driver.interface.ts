@@ -1,9 +1,12 @@
 export interface IBodyVehicleDriver {
-  pkVehicleDriver?: number;
+  pkVehicle?: number;
   fkDriver: number;
+  fkPerson: number;
+  fkCategory: number;
   fkBrand: number;
   fkModel: number;
   isProper: number;
+  verified: number;
   imgLease: string;
   numberPlate: string;
   year: number;

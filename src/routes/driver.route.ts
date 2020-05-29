@@ -33,11 +33,32 @@ DriverRoutes.put('/Driver/Profile/:id', [verifyToken, verifyWebmasterRole], (req
 
             res.json({
                 ok: true,
-                data: [{ profile: data[0], vehicles: dataVehicle }]
+                data: { profile: data[0], vehicles: dataVehicle }
             });
         });
     });
 
+});
+
+DriverRoutes.get('/Driver/Vehicle/Get/:id', [verifyToken], (req: Request, res: Response) => {
+    
+    let pkDriver = req.params.id || 0;
+
+    let sqlVehicles = `CALL as_sp_getVehicleDriver( ${ pkDriver } );`;
+
+    MysqlCss.onExecuteQuery( sqlVehicles, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error,
+            });
+        }
+
+        res.json({
+            ok: true,
+            data
+        });
+    });
 });
 
 DriverRoutes.put('/Vehicle/Verify/:driver/:vehicle', [verifyToken, verifyWebmasterRole], (req: any, res: Response) => {

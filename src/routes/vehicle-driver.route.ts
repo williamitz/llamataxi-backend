@@ -4,11 +4,11 @@ import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
 
-let VehicleDriverRouter = Router();
+let VehicleRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-VehicleDriverRouter.get("/VehicleDriver/Get", (req: Request, res: Response) => {
+VehicleRouter.get("/VehicleDriver/Get", (req: Request, res: Response) => {
   let body: IBodyVehicleDriver = req.body;
   let page = req.query.page || 1;
   let q = req.query.q || "";
@@ -65,7 +65,8 @@ VehicleDriverRouter.get("/VehicleDriver/Get", (req: Request, res: Response) => {
     );
   });
 });
-VehicleDriverRouter.get("/Driver/GetAll", (req: Request, res: Response) => {
+
+VehicleRouter.get("/Driver/GetAll", (req: Request, res: Response) => {
   let sql = `CALL as_sp_getListDriverAll();`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
@@ -80,101 +81,86 @@ VehicleDriverRouter.get("/Driver/GetAll", (req: Request, res: Response) => {
     });
   });
 });
-VehicleDriverRouter.post("/VehicleDriver/Add", (req: any, res: Response) => {
+
+VehicleRouter.post("/Vehicle/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyVehicleDriver = req.body;
 
-  let pkUserToken = 1; //req.userData.pkUser || 0;
-  let sql = `CALL as_sp_addVehicleDriver( ${body.fkDriver || null},
-    ${body.fkBrand || null},
-    ${body.fkModel || null},
-    ${body.isProper || null},
-    '${body.imgLease || ""}',
-    '${body.numberPlate || ""}',
-    ${body.year || null},
-    '${body.color || ""}',
-    '${body.imgSoat || ""}',
-    '${body.dateSoatExpiration || ""}',
-    '${body.imgPropertyCard || ""}',
-     ${pkUserToken}, 
-    '${reqIp.getClientIp(req)}');`;
+  let fkUser = req.userData.pkUser || 0;
+
+  let sql = `CALL as_sp_addVehicle( ${body.fkDriver}, ${ body.fkPerson }, ${ body.fkCategory }, ${body.fkBrand}, ${body.fkModel}, ${body.isProper}, '${body.numberPlate.toUpperCase()}', ${body.year}, '${body.color}', '${body.dateSoatExpiration}', ${ body.verified }, ${fkUser}, '${reqIp.getClientIp(req)}');`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
         error,
       });
     }
+
     res.json({
       ok: true,
       showError: data[0].showError,
       data: data[0],
     });
+
   });
+
 });
 
-VehicleDriverRouter.put(
-  "/VehicleDriver/Update/:id",
-  (req: any, res: Response) => {
+VehicleRouter.put("/Vehicle/Update/:id", [verifyToken], (req: any, res: Response) => {
     let body: IBodyVehicleDriver = req.body;
 
-    let pkParam = req.params.id || 0;
-    let pkUserToken = 1; //req.userData.pkUser || 0;
+    let pkVehicle = req.params.id || 0;
+    let fkUser =req.userData.pkUser || 0;
 
-    let sql = `CALL as_sp_updateVehicleDriver( ${pkParam}, 
-      ${body.fkDriver || null},
-      ${body.fkBrand || null},
-      ${body.fkModel || null},
-      ${body.isProper || null},
-      '${body.imgLease || ""}',
-      '${body.numberPlate || ""}',
-      ${body.year || null},
-      '${body.color || ""}',
-      '${body.imgSoat || ""}',
-      '${body.dateSoatExpiration || ""}',
-      '${body.imgPropertyCard || ""}',
-    ${pkUserToken} ,  
-    '${reqIp.getClientIp(req)}' );`;
+    let sql = `CALL as_sp_updateVehicle( ${ pkVehicle }, ${body.fkDriver}, ${ body.fkPerson }, ${ body.fkCategory }, ${body.fkBrand}, ${body.fkModel}, ${body.isProper}, '${body.numberPlate.toUpperCase()}', ${body.year}, '${body.color}', '${body.dateSoatExpiration}', ${fkUser}, '${reqIp.getClientIp(req)}');`;
 
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
       if (error) {
         return res.status(400).json({
           ok: false,
           error,
         });
       }
+
       res.json({
         ok: true,
         showError: data[0].showError,
         data: data[0],
       });
-    });
-  }
-);
 
-VehicleDriverRouter.delete(
-  "/VehicleDriver/Delete/:id/:statusRegister",
-  (req: Request, res: Response) => {
-    let pkParam = req.params.id || 0;
-    let status = req.params.statusRegister || 0;
-    let pkUserToken = 1; //req.userData.pkUser || 0;
-    let sql = `CALL as_sp_deleteVehicleDriver( '${pkParam}', 
-      ${status},
-      ${pkUserToken} , 
-      '${reqIp.getClientIp(req)}' );`;
+    });
+    
+});
+
+VehicleRouter.delete("/Vehicle/Delete/:id/:driver/:status", [verifyToken],  (req: any, res: Response) => {
+    let pkVehicle = req.params.id || 0;
+    let fkDriver = req.params.driver || 0;
+    let status = req.params.status || 0;
+
+    let pkUserToken = req.userData.pkUser || 0;
+
+    let sql = `CALL as_sp_deleteVehicle(${pkVehicle}, ${ fkDriver }, ${status}, ${pkUserToken}, '${reqIp.getClientIp(req)}' );`;
+
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
       if (error) {
         return res.status(400).json({
           ok: false,
           error,
         });
       }
+
       res.json({
         ok: true,
         showError: data[0].showError,
         data: data[0],
       });
+
     });
+
   }
 );
-export default VehicleDriverRouter;
+export default VehicleRouter;
