@@ -23,6 +23,7 @@ export default class MainServer {
     private journal: string;
     private journal_db: IJournalDB[];
     private pkJournal: number;
+    private nameJournal: string;
 
     constructor() {
         this.app = express();
@@ -34,6 +35,7 @@ export default class MainServer {
         this.journal = 'NOCTURN';
         this.journal_db = [];
         this.pkJournal = 0;
+        this.nameJournal = '';
     }
 
     private listenSockets(){
@@ -41,6 +43,7 @@ export default class MainServer {
             mainSocket.connectUser( client );
             mainSocket.disconnectUser( client, this.io );
             mainSocket.singUser( client, this.io  );
+            mainSocket.logoutUser( client, this.io );
             mainSocket.sendNotify( client, this.io );
         });
     }
@@ -51,8 +54,10 @@ export default class MainServer {
             if (error) {
                 return console.log('Error en base de datos', error);
             }
-
-            this.journal_db = data;
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString );
+            
+            this.journal_db = json;
         });
     }
 
@@ -65,11 +70,30 @@ export default class MainServer {
         setInterval( () => {
 
             let hour = Number( moment().format('HH') );
+            let minutes = Number( moment().format('mm') );
+            
+            let hhStartDB = 0;
+            let mmStartDB = 0;
 
+            let hhEndDB = 0;
+            let mmEndDB = 0;
             this.journal_db.forEach( journal => {
-                if (hour >= journal.hourStart && hour <= journal.hourEnd) {
+
+                let arrStart = journal.hourStart.split(':');
+                let arrEnd = journal.hourEnd.split(':');
+                
+                hhStartDB = Number( arrStart[0] ) || 0;
+                mmStartDB = Number( arrStart[1] ) || 0;
+                
+                hhEndDB = Number( arrEnd[0] ) || 0;
+                mmEndDB = Number( arrEnd[1] ) || 0;
+                        
+                if ( ( hour >= hhStartDB && (minutes >= 0 || minutes <=  mmStartDB)) && ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+
                     this.pkJournal = journal.pkJournal;
-                    console.log('jornada', journal.nameJournal);
+                    this.nameJournal = journal.nameJournal;
+                    // console.log('jornada', journal.nameJournal);
+
                     if (this.journal !== journal.codeJournal) {
                         console.log('notificar con socket');
                         this.io.to('MOVILE').emit('change-journal', journal);
@@ -78,45 +102,46 @@ export default class MainServer {
                 }
             });
 
-            // if (hour >= 0 && hour <= 5) {
-            //     console.log('nocturno');
-            //     if (this.journal !== 'NOCTURN') {
-            //         console.log('notificar con socket');
-            //         this.journal = 'NOCTURN';
-            //     }
-            // }else if (hour >= 6 && hour <= 18) {
-            //     console.log('diurno');
-            //     if (this.journal !== 'DIURN') {
-            //         console.log('notificar con socket');
-            //         this.journal = 'DIURN';
-            //     }
-            // }else if( hour >= 19 || hour <= 23 ){
-            //     console.log('nocturno');
-            //     if (this.journal !== 'NOCTURN') {
-            //         console.log('notificar con socket');
-            //         this.journal = 'NOCTURN';
-            //     }
-            // }
-
-            console.log('Son las ', moment().format('HH:mm'));
+            console.log('Son las ', moment().format('HH:mm') , ` - jornada ${ this.pkJournal } ${ this.nameJournal }`);
         }, 60000)
     }
     
     public getJournal(): IJournalDB {
-        let hour = Number( moment().format('HH') );
         
         let objJournal = {
             pkJournal: 0,
-            nameJournal: 'string',
-            codeJournal: 'string',
-            hourStart: 0,
-            hourEnd: 0,
+            nameJournal: '',
+            codeJournal: '',
+            hourStart: '',
+            hourEnd: '',
         };
+
+        let hour = Number( moment().format('HH') );
+        let minutes = Number( moment().format('mm') );
+        
+        let hhStartDB = 0;
+        let mmStartDB = 0;
+        
+        let hhEndDB = 0;
+        let mmEndDB = 0;
         this.journal_db.forEach( journal => {
-            if (hour >= journal.hourStart && hour <= journal.hourEnd) {
+        
+            let arrStart = journal.hourStart.split(':');
+            let arrEnd = journal.hourEnd.split(':');
+            
+            hhStartDB = Number( arrStart[0] ) || 0;
+            mmStartDB = Number( arrStart[1] ) || 0;
+            
+            hhEndDB = Number( arrEnd[0] ) || 0;
+            mmEndDB = Number( arrEnd[1] ) || 0;
+        
+            if ( ( hour >= hhStartDB && (minutes >= 0 || minutes <=  mmStartDB)) && ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+
                 objJournal = journal;
+                return journal;
             }
         });
+
         return objJournal;
     }
 

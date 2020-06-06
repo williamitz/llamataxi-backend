@@ -159,20 +159,41 @@ UserRouter.get('/User/Profile/:pkUser', [verifyToken, verifyWebmasterRole], (req
 });
 
 UserRouter.put('/User/Profile/Update', [verifyToken], (req: any, res: Response) => {
-    let body: IUserProfile = req.body;
+    let body: IBodyUser = req.body;
     let pkUserToken = req.userData.pkUser || 0;
 
     /**
-     * IN `InPkUser` int,
+     *  IN `InPkUser` int,
         IN `InFkTypeDoc` int,
+        IN `InFkNationality` int,
         IN `InDocument` varchar(15),
-
+        
+        IN `InName` varchar(50),
+        IN `InSurname` varchar(50),
+        IN `InEmail` varchar(50),
+        IN `InPhone` varchar(20),
+        IN `InSex` CHAR(1),
+        IN `InDateBirth` varchar(12),
+        
         IN `InFkUser` int,
         IN `InIpUser` varchar(20)
      */
 
-    // alt + 96 
-    let sql = `CALL as_sp_updateProfileUser( ${ body.pkUser }, ${ body.fkTypeDocument }, '${ body.document }', ${ pkUserToken }, '${ reqIp.getClientIp( req ) }' );`;
+    
+    let sql = `CALL as_sp_updateProfileUser( `;
+
+    sql += `${ body.pkUser }, `;
+    sql += `${ body.fkTypeDocument }, `;
+    sql += `${ body.fkNationality }, `;
+    sql += `'${ body.document }', `;
+    sql += `'${ body.name }', `;
+    sql += `'${ body.surname }', `;
+    sql += `'${ body.email }', `;
+    sql += `'${ body.phone }', `;
+    sql += `'${ body.sex }', `;
+    sql += `'${ body.birthDate }', `;
+    sql += `${ pkUserToken }, `;
+    sql += `'${ reqIp.getClientIp( req ) }' );`;
 
     MysqlCnn.onExecuteQuery( sql, ( error: any, data: any[] ) => {
         if (error) {
@@ -190,4 +211,47 @@ UserRouter.put('/User/Profile/Update', [verifyToken], (req: any, res: Response) 
     });
 });
 
+UserRouter.delete('/User/:pkUser/:status', [verifyToken, verifyWebmasterRole], (req: any, res: Response) => {
+
+    let pkUser = req.params.pkUser || 0;
+    let status = req.params.status;
+    let observation = req.query.obs || '';
+    let fkUser = req.userData.pkUser || 0;
+    
+    let statusValid = ['true', 'false'];
+
+    if (!statusValid.includes( status )) {
+        return res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Los estados válidos son ' + statusValid.join(', ')
+            }
+        });
+    }
+    /**
+     *  IN `InPkUser` int,
+        IN `InStatus` tinyint,
+        IN `InObservation` VARCHAR(100),
+        IN `InFkUser` int,
+        IN `InIpUser` varchar(20)
+     */
+    
+    let sql = `CALL as_sp_deleteUser(${ pkUser }, ${ status }, '${ observation }', ${ fkUser }, '${ reqIp.getClientIp( req ) }');`;
+    
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+    });
+});
 export default UserRouter;

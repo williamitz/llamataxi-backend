@@ -64,8 +64,8 @@ UploadRoutes.put('/upload/:module/:id/', verifyToken , (req: Request, res: Respo
     let nameFile = '';
     let pathImg = '';
     if (module === 'user') {
-
-        nameFile = `${ idEntity }-photo.png`;
+        const date = new Date().getSeconds();
+        nameFile = `${ idEntity }-photo${ date }.png`;
         pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
         
     }
@@ -104,6 +104,7 @@ function updatedImgUser( pkUser: number, nameFile: string, req: Request , res: R
 
         res.json({
             ok: true,
+            data: [{ nameFile }],
             messge: 'Se subió imagen exitosamente'
         });
     });

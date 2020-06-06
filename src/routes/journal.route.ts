@@ -62,7 +62,7 @@ JournalRouter.post("/Journal/Add", [verifyToken], (req: any, res: Response) => {
     });
   }
 
-  let sql = `CALL cc_sp_addJournal( '${body.nameJournal}', '${body.codeJournal}', ${body.hourStart}, ${body.hourEnd},${pkUserToken} ,'${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL cc_sp_addJournal( '${body.nameJournal}', '${body.codeJournal}', '${body.hourStart}', '${body.hourEnd}',${pkUserToken} ,'${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
@@ -87,7 +87,7 @@ JournalRouter.put("/Journal/Update/:id", [verifyToken], (req: any, res: Response
   let pkParam = req.params.id || 0;
   let pkUserToken = req.userData.pkUser || 0;
 
-  let sql = `CALL cc_sp_updateJournal( ${pkParam}, '${body.nameJournal}', '${body.codeJournal}',${body.hourStart }, ${body.hourEnd }, ${pkUserToken} ,'${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL cc_sp_updateJournal( ${pkParam}, '${body.nameJournal}', '${body.codeJournal}','${body.hourStart }', '${body.hourEnd }', ${pkUserToken} ,'${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {

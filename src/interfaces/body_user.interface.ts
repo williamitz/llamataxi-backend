@@ -1,5 +1,7 @@
 export interface IBodyUser {
     pkUser?: number;
+    pkPerson?: number;
+    pkDriver: number;
     fkTypeDocument: number;
     fkNationality?: number;
 
@@ -7,6 +9,7 @@ export interface IBodyUser {
     surname: string;
     document: string;
     dateBirth: string;
+    birthDate?: string;
     email?: string;
     phone?: string;
     sex?: string;

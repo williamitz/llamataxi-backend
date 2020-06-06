@@ -58,6 +58,41 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
     });
 };
 
+export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('logout-user', (payload: IUserSocket, callback) => {
+
+        const userLogout = listUser.onFindUser( client.id );
+        const ok = listUser.onLogoutUser( client.id );
+        if (!ok) {            
+            callback({
+                ok: false, 
+                error:{ 
+                    message: 'No se encontró usuario para desconexión :(' 
+                }
+            });
+        }
+        client.leave( userLogout.device || '', (err: any) => {
+            if (err) {
+                console.error('Ocurrio un error al expulsar usuario en la sala');
+            } 
+        });
+        
+        io.to('WEB').emit('user-disconnect', { pkUser: payload.pkUser });
+        console.log('clientes configurados', listUser.onGetUsers());
+        onSingSocketDB(payload.pkUser, payload.osID, false).then( (resSql) => {
+
+            callback({
+                ok: true, 
+                message: 'Cliente socket desconectado con éxito :D',
+                data: resSql.data
+            });
+            
+        }).catch( e => {
+            console.error('Error al procesar sql', e);
+        });
+    });
+};
+
 export const sendNotify = (client: Socket, io: SocketIO.Server) => {
     client.on('send-notification-web', async(payload: INotifySocket, callback) => {
         // recibir id del usuario
@@ -93,7 +128,7 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
             }
         });
         io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
-        onSingSocketDB(userDelete.pkUser, userDelete.osID, false).then( (resSql) => {
+        onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
             
             // callback( {ok:true, data: resSql} );
             console.log('Se desconecto un usuario', resSql);

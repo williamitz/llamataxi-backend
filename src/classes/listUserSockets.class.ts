@@ -52,6 +52,23 @@ export class ListUserSockets {
         return true;
     }
 
+    onLogoutUser(id: string) {
+        const finded = this.listUser.find( user => user.id === id  );
+        if (!finded) {
+            console.error('No se encontró usuario socket');
+            return false;
+        }
+        
+        finded.pkUser = 0,
+        finded.role = '';
+        finded.userName = '';
+        finded.timer = 0;
+        finded.device = '';
+        finded.osID = '';
+        
+        return true;
+    }
+
     onGetAdminSort( role: string ) {
         let usersAdmin = this.listUser.filter( user => user.role === role );
         let newArr: UserSocket[] = [];
@@ -93,7 +110,19 @@ export class ListUserSockets {
     }
 
     onFindUser( id: string ) {
-        return this.listUser.find( u => u.id === id );
+        const finded =  this.listUser.find( u => u.id === id );
+        if (!finded) {
+            return {
+                pkUser: 0,
+                role: '',
+                userName: '',
+                timer: 0,
+                device: '',
+                osID: '',
+            };
+        }
+
+        return finded;
     }
 
     onUpdateTime( id: string ) {
