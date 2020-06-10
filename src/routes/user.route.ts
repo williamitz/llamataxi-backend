@@ -101,7 +101,7 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
 UserRouter.post('/User/Add', [verifyToken, verifyWebmasterRole], (req: any, res: Response) => {
     let body: IBodyUser = req.body;
     let fkUser = req.userData.pkUser || 0;
-    let rolesValid = ['ADMIN_ROLE', 'ATTENTION_ROLE'];
+    let rolesValid = ['ADMIN_ROLE', 'ATTENTION_ROLE', 'DRIVER_ROLE'];
 
     if (!rolesValid.includes( body.role )) {
         return res.status(400).json({
@@ -114,7 +114,23 @@ UserRouter.post('/User/Add', [verifyToken, verifyWebmasterRole], (req: any, res:
 
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
     
-    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.userName }', '${ passEncrypt }', '${ body.role }', ${ body.google }, ${ fkUser }, '${ reqIp.getClientIp( req ) }' );`;
+    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, `;
+    sql += `${ body.fkNationality }, `;
+    sql += `'${ body.name }', `;
+    sql += `'${ body.surname }', `;
+    sql += `'${ body.document }', `;
+    sql += `'${ body.email }', `;
+    sql += `'${ body.phone }', `;
+    sql += `'${ body.userName }', `;
+    sql += `'${ passEncrypt }', `;
+    sql += `'${ body.role }', `;
+    sql += `${ body.google }, `;
+
+    sql += `'${ body.dateLicenseExpiration }', `;
+    sql += `${ body.isEmployee }, `;
+
+    sql += `${ fkUser }, `;
+    sql += `'${ reqIp.getClientIp( req ) }' );`;
 
     MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) { 

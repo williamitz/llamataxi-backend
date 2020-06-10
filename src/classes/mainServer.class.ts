@@ -55,7 +55,7 @@ export default class MainServer {
                 return console.log('Error en base de datos', error);
             }
             let dataString = JSON.stringify(data);
-            let json = JSON.parse(dataString );
+            let json = JSON.parse(dataString);
             
             this.journal_db = json;
         });

@@ -50,10 +50,10 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         }).catch( e => {
 
             console.error('Error al procesar sql', e);
-            // callback({
-            //     ok: false,
-            //     data: e
-            // });
+            callback({
+                ok: false,
+                data: e
+            });
         });
     });
 };
@@ -88,6 +88,10 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
             });
             
         }).catch( e => {
+            callback({
+                ok: false, 
+                error: e
+            });
             console.error('Error al procesar sql', e);
         });
     });
@@ -130,14 +134,14 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
         io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
         onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
             
-            // callback( {ok:true, data: resSql} );
+            callback( {ok:true, data: resSql} );
             console.log('Se desconecto un usuario', resSql);
             
         }).catch( e => {
-            // callback({
-            //     ok: false,
-            //     error: e
-            // });
+            callback({
+                ok: false,
+                error: e
+            });
             console.error('Error al procesar sql', e);
         });
     });
@@ -150,10 +154,11 @@ function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<I
     
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
             if (error) {                
-                reject( error );
+                reject( {ok: false, error} );
             }
-
-            resolve( { ok: true, data: data[0] } );
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+            resolve( { ok: true, data: json } );
         });
     });
 }
