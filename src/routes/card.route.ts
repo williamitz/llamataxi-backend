@@ -8,4 +8,8 @@ let CardRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-CardRouter.post('/Card/Add', [verifyToken], ())
+CardRouter.post('/Card/Add', [verifyToken], (req: Request, res: Response) => {
+    
+});
+
+export default CardRouter;
