@@ -2,6 +2,7 @@ export interface IBodyService {
     pkService: number;
     fkJournal: number;
     fkRate: number;
+    fkCategory: number;
     
     coordsOrigin: ICoords;
     coordsDestination: ICoords;
@@ -13,7 +14,11 @@ export interface IBodyService {
     distanceText: string;
     minutes: number;
     minutesText: string;
-    rate: number;
+    // rate: number;
+    minRatePrc: number;
+    paymentType: string;
+    rateHistory: number;
+    rateService: number;
 }
 
 interface ICoords {

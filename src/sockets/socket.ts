@@ -1,10 +1,11 @@
 import  { Socket } from 'socket.io';
 import { ListUserSockets } from '../classes/listUserSockets.class';
-import { IUserSocket } from '../interfaces/user-socket.interface';
+import { IUserSocket, IUserCoords } from '../interfaces/user-socket.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
 import IResponse from '../interfaces/resp_promise.interface';
 import SocketIO from 'socket.io';
 import { INotifySocket } from '../interfaces/body_notify_socket.interface';
+import h3 from 'h3-js';
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
@@ -15,7 +16,7 @@ export const connectUser = ( client: Socket ) => {
 }
 
 export const singUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('sing-user', (payload: IUserSocket, callback) => {
+    client.on('sing-user', (payload: IUserSocket, callback: Function) => {
         const ok = listUser.onSingUser( client.id,
                                         payload.pkUser,
                                         payload.userName,
@@ -50,20 +51,20 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         }).catch( e => {
 
             console.error('Error al procesar sql', e);
-            callback({
-                ok: false,
-                data: e
-            });
+            // callback({
+            //     ok: false,
+            //     data: e
+            // });
         });
     });
 };
 
 export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('logout-user', (payload: IUserSocket, callback) => {
+    client.on('logout-user', (payload: IUserSocket, callback: Function) => {
 
         const userLogout = listUser.onFindUser( client.id );
         const ok = listUser.onLogoutUser( client.id );
-        if (!ok) {            
+        if (!ok) {
             callback({
                 ok: false, 
                 error:{ 
@@ -71,6 +72,7 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
                 }
             });
         }
+
         client.leave( userLogout.device || '', (err: any) => {
             if (err) {
                 console.error('Ocurrio un error al expulsar usuario en la sala');
@@ -94,6 +96,89 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
             });
             console.error('Error al procesar sql', e);
         });
+    });
+};
+
+// notificando a conductores de acuerdo a su categoría 
+// cuando se registra un nuevo servicio de taxi
+export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+
+    /**
+     * codeCategory: this.bodyService.codeCategory,
+        coords: {
+                lat: this.bodyService.coordsOrigin.lat,
+                lng: this.bodyService.coordsOrigin.lng
+        }
+     */
+
+    client.on('new-service', ( payload: any, callback: Function ) => {
+
+        const indexHex = h3.geoToH3( payload.coords.lat, payload.coords.lat, radiusPentagon );
+        const drivers = listUser.onFindDriversHexCategory( payload.codeCategory, indexHex );
+        
+        if (drivers.length > 0 ) {
+            
+            drivers.forEach( driver => {
+
+                io.in( driver.id ).emit('new-service', {});
+
+            });
+        }
+
+    });
+}
+
+// escuchamos cuando un conductor cambia de categoría, 
+// agregamos a los conductores a una sala por categoría
+export const configCategoryUser = ( client: Socket ) => {
+    client.on('change-category', ( payload: any, callback: Function ) => {
+        const user = listUser.onFindUser( client.id );
+
+        if (user.pkUser === 0) {
+            return callback({ok: false, message: 'Usuario no encontrado'});
+        }
+        
+        // sacar a los conductores de su sala anterior
+        if (user.category != '') {
+            
+            client.leave( user.category, (error: any) => {
+                if (error) {
+                    return callback({
+                        ok: false,
+                        error:{ 
+                            message: `Error al abandonar sala ${ user.category } :(` 
+                        }
+                    });
+                }
+            });
+
+            user.onUpdateCategory( payload.pkCategory , payload.codeCategory );
+            client.join( payload.codeCategory , (error: any) => {
+                if (error) {
+                    return callback({
+                        ok: false,
+                        error:{ 
+                            message: `Error al agregar a sala ${ user.category } :(` 
+                        }
+                    });
+                }
+            });
+            
+            onUpdateCategoryUser( user.pkUser, payload.pkCategory ).then( (res) => {
+
+                callback({ok: true,
+                    message: `Cambio de categoría con éxito :D`
+                });
+
+            }).catch( (e) => {
+                
+                callback({ok: false,
+                    message: `Error interno en base de datos`,
+                    error: e
+                });
+
+            });
+        }
     });
 };
 
@@ -124,7 +209,7 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
 }
 
 export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('disconnect', (payload, callback: any) => {
+    client.on('disconnect', (payload, callback: Function) => {
         const userDelete = listUser.onDeleteUser( client.id );
         client.leave( userDelete.device, (err: any) => {
             if (err) {
@@ -134,17 +219,43 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
         io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
         onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
             
-            callback( {ok:true, data: resSql} );
+            callback( resSql );
             console.log('Se desconecto un usuario', resSql);
             
         }).catch( e => {
-            callback({
-                ok: false,
-                error: e
-            });
+            // callback({
+            //     ok: false,
+            //     error: e
+            // });
             console.error('Error al procesar sql', e);
         });
     });
+};
+
+export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+
+    client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
+        const user = listUser.onFindUser( client.id );
+        const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
+        
+        onUpdateCoords( user.pkUser, payload.lat, payload.lng, indexHex ).then( () => {
+            
+            // notificar a clients cercanos a la ubicación, y al panel web
+            callback({
+                ok: true,
+                message: 'Se actualizo coordenadas, pendiente notificar'
+            });
+
+        }).catch(e => {
+            console.error('Error al actualizar coordenadas', e);
+            // callback({
+            //     ok: false,
+            //     message: 'Ocurrio un error!',
+            //     error: e
+            // });
+        });
+    });
+
 };
 
 function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<IResponse> {
@@ -242,4 +353,52 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
       
         
   });
+}
+
+function onUpdateCoords( pkUser: number, lat: number, lng: number, indexHex: string ): Promise<IResponse> {
+    return new Promise( (resolve, reject) => {
+        /**
+         * IN `InPkUser` int,
+            IN `InIndexHex` varchar(20),
+            IN `InLat` float(20,10),
+            IN `InLng` float(20,10)
+         */
+        
+        
+        let sql = `CALL ts_sp_updateUserCoords( ${ pkUser }, '${ indexHex }', ${ lat }, ${ lng } );`;
+
+        mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
+            
+            if (error) {
+                return reject({ok: false, error});
+            }
+            
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            resolve({ok: true, data: json[0]});
+
+        });
+    });
+}
+
+function onUpdateCategoryUser( pkUser: number, pkCategory: number ): Promise<IResponse> {
+    return new Promise( (resolve, reject) => {
+
+        let sql = `CALL ts_sp_updateCategoryDriver( ${ pkUser }, ${ pkCategory } );`;
+
+        mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
+            
+            if (error) {
+                return reject({ok: false, error});
+            }
+            
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            resolve({ok: true, data: json[0]});
+
+        });
+        
+    });
 }

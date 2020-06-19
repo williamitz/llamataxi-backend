@@ -1,4 +1,4 @@
-import { UserSocket } from "./userSocket.class";
+import { UserSocket } from './userSocket.class';
 
 export class ListUserSockets {
     
@@ -15,6 +15,10 @@ export class ListUserSockets {
         return this.listUser;
     }
 
+    onGetDriverHex( indexHex: string ): UserSocket[] {
+        return this.listUser.filter( user => user.pkUser !== 0 && user.role === 'DRIVER_ROLE' && user.indexHex === indexHex );
+    }
+
     onAddUser( id: string ) {
         this.listUser.push( new UserSocket( id ) );
     }
@@ -23,7 +27,21 @@ export class ListUserSockets {
         const finded = this.listUser.find( user => user.id === id );
         if (!finded) {
             console.error('No se encontró usuario socket');
-            return{id: '', userName: 'undefinde', role: '', pkUser: 0, timer: 0, device: '', osID: ''};
+            return{
+                id: '',
+                userName: 'undefined', 
+                role: '', 
+                pkUser: 0, 
+                timer: 0, 
+                device: '', 
+                osID: '', 
+                indexHex: '',
+                pkCategory: 0,
+                category: '',
+                coords: {lat: 0, lng: 0},
+                onUpdateCoords() { return ''; },
+                onUpdateCategory() { return false }
+            };
         }
 
         this.listUser = this.listUser.filter( user => user.id !== id );
@@ -109,20 +127,31 @@ export class ListUserSockets {
 
     }
 
-    onFindUser( id: string ) {
+    onFindUser( id: string ): UserSocket {
         const finded =  this.listUser.find( u => u.id === id );
         if (!finded) {
-            return {
-                pkUser: 0,
-                role: '',
-                userName: '',
-                timer: 0,
-                device: '',
-                osID: '',
+            return{
+                id: '',
+                userName: 'undefined', 
+                role: '', 
+                pkUser: 0, 
+                timer: 0, 
+                device: '', 
+                osID: '', 
+                indexHex: '',
+                pkCategory: 0,
+                category: '',
+                coords: {lat: 0, lng: 0},
+                onUpdateCoords() { return ''; },
+                onUpdateCategory() { return false }
             };
         }
 
         return finded;
+    }
+
+    onFindDriversHexCategory( category: string, hex: string ): UserSocket[] {
+        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.category === category && user.indexHex === hex );
     }
 
     onUpdateTime( id: string ) {

@@ -2,9 +2,6 @@
 import mysql from 'mysql';
 import { PORT_DB, HOST_DB, USER_DB, PASSWORD_DB, NAME_DB  } from '../global/environments.global';
 
-
-
-
 export default class MysqlClass {
 
     private connectDB: mysql.Connection;

@@ -16,7 +16,26 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
 
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
     
-    let sql = `CALL as_sp_addUser( ${ body.fkTypeDocument }, ${ body.fkNationality }, '${ body.name }', '${ body.surname }', '${ body.document }', '${ body.email }', '${ body.phone }', '${ body.userName }', '${ passEncrypt }', 'CLIENT_ROLE', ${ body.google }, 0, '${ reqIp.getClientIp( req ) }' );`;
+    let sql = `CALL as_sp_addUser( `;
+    sql += `${ body.fkTypeDocument }, `;
+    sql += `${ body.fkNationality }, `;
+    sql += `'${ body.name }', `;
+    sql += `'${ body.surname }', `;
+    sql += `'${ body.document }', `;
+    sql += `'${ body.email }', `;
+    sql += `'${ body.phone }', `;
+    sql += `'${ body.userName }', `;
+    sql += `'${ passEncrypt }', `;
+    sql += `'CLIENT_ROLE', `;
+    sql += `${ body.google }, `;
+    
+    //  estos datos solo se toman en cuenta cuando es u conductor
+    sql += `'', `; // fecha exp soat
+    sql += `0, `; // es empleado
+
+    sql += `0, `;
+    sql += `'${ reqIp.getClientIp( req ) }'`;
+    sql += `);`;
 
     Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) { 
@@ -77,12 +96,51 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
 
 });
 
-AuthRoutes.post('/login', (req: Request, res: Response) => {
+AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
     let body: IBodyUser = req.body;
 
-    let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+    let sql = `CALL as_sp_loginClient( '${ body.userName }' );`;
 
-    let sql = `CALL as_sp_login( '${ body.userName }', '${ passEncrypt }' );`;
+    Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            }); 
+        }
+
+        let token = '';
+        let showError = data[0].showError || 0;
+        if (showError === 0) {
+
+            if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
+                return res.json({
+                    ok: true,
+                    showError: showError + 2,
+                });
+            }
+
+            delete data[0].userPassword;
+            delete data[0].showError;
+
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+        }
+
+        res.json({
+            ok: true,
+            showError,
+            data: data[0],
+            token
+        });
+
+    });
+
+});
+
+AuthRoutes.post('/Login/Driver', (req: Request, res: Response) => {
+    let body: IBodyUser = req.body;
+
+    let sql = `CALL as_sp_loginDriver( '${ body.userName }' );`;
 
     Mysql.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) {

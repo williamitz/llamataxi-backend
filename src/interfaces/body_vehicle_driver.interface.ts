@@ -16,3 +16,20 @@ export interface IBodyVehicleDriver {
   imgPropertyCard: string;
   statusRegister: number;
 }
+
+
+export interface IBodyVehicleApp {
+
+  pkVehicle?: number;
+  fkDriver: number;
+  fkPerson: number;
+  isProper: number;
+  verified: number;
+  numberPlate: string;
+  year: number;
+  color: string;
+  imgSoat: string;
+  dateSoatExpiration: Date;
+  imgPropertyCard: string;
+
+}

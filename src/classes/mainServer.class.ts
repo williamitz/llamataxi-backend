@@ -13,10 +13,10 @@ let MysqlCon = MysqlClass.instance;
 
 export default class MainServer {
 
-    
     private static _instance: MainServer;
     app: express.Application;
     port: number;
+    public radiusPentagon: number;
 
     io: SocketIO.Server;
     private _httpServer: http.Server;
@@ -24,6 +24,8 @@ export default class MainServer {
     private journal_db: IJournalDB[];
     private pkJournal: number;
     private nameJournal: string;
+
+    private percentRate: number;
 
     constructor() {
         this.app = express();
@@ -36,6 +38,8 @@ export default class MainServer {
         this.journal_db = [];
         this.pkJournal = 0;
         this.nameJournal = '';
+        this.percentRate = 0;
+        this.radiusPentagon = 6;
     }
 
     private listenSockets(){
@@ -45,6 +49,9 @@ export default class MainServer {
             mainSocket.singUser( client, this.io  );
             mainSocket.logoutUser( client, this.io );
             mainSocket.sendNotify( client, this.io );
+            mainSocket.currentPosition( client, this.io, this.radiusPentagon );
+            mainSocket.newService( client, this.io, this.radiusPentagon );
+            mainSocket.configCategoryUser( client );
         });
     }
 
@@ -58,6 +65,20 @@ export default class MainServer {
             let json = JSON.parse(dataString);
             
             this.journal_db = json;
+        });
+
+    }
+
+    private loadPercentRate() {
+        MysqlCon.onExecuteQuery('CALL ts_sp_getPercentRate();', (error: any, data: any[]) => {
+            if (error) {
+                return console.log('Error en base de datos al listar el porcentaje de tarifa', error);
+            }
+
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+            // console.log('porcentaje minimo', json);
+            this.percentRate = json[0].percentRate || 0;
         });
     }
 
@@ -145,6 +166,10 @@ export default class MainServer {
         return objJournal;
     }
 
+    public getPercentRate(): number {
+        return this.percentRate;
+    }
+
     public static get instance () {
         return this._instance || ( this._instance = new this() );
     }
@@ -159,6 +184,7 @@ export default class MainServer {
         this.loadPublic();
         this.loadJournal();
         this.listenTimer();
+        this.loadPercentRate();
     }
 
 

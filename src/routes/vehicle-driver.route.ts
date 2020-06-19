@@ -3,13 +3,15 @@ import { IBodyVehicleDriver } from "./../interfaces/body_vehicle_driver.interfac
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
+import { verifyDriverRole } from '../middlewares/token.mdd';
+import { IBodyVehicleApp } from '../interfaces/body_vehicle_driver.interface';
 
 let VehicleRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
 VehicleRouter.get("/VehicleDriver/Get", (req: Request, res: Response) => {
-  let body: IBodyVehicleDriver = req.body;
+  // let body: IBodyVehicleDriver = req.body;
   let page = req.query.page || 1;
   let q = req.query.q || "";
   let fkDriver = req.query.fkDriver || 0;
@@ -161,6 +163,98 @@ VehicleRouter.delete("/Vehicle/Delete/:id/:driver/:status", [verifyToken],  (req
 
     });
 
-  }
-);
+});
+
+VehicleRouter.post('/Vehicle/Add/App', [verifyToken, verifyDriverRole], (req: any, res: Response ) => {
+    
+  let body: IBodyVehicleApp = req.body;
+
+  let pkUserToken = req.userData.pkUser || 0;
+  let pkDriverToken = req.userData.pkDriver || 0;
+  let pkPersonToken = req.userData.pkPerson || 0;
+
+  let sql = `CALL ts_sp_addVehicle(`;
+  sql += `${ pkDriverToken }, `;
+  sql += `${ pkPersonToken }, `;
+  sql += `${ body.isProper }, `;
+  sql += `'${ body.numberPlate.toUpperCase() }', `;
+  sql += `${ body.year }, `;
+  sql += `'${ body.color }', `;
+  sql += `'${ body.dateSoatExpiration }', `;
+  sql += `${ pkUserToken }, `;
+  sql += `'${ reqIp.getClientIp(req) }' );`;
+
+  MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+
+    res.json({
+      ok: true,
+      showError: data[0].showError,
+      data: data[0]
+    });
+
+  });
+
+});
+
+VehicleRouter.put('/Using/Vehicle/:pkVehicle', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+
+  let pkVehicle = req.params.pkVehicle || 0;
+  let pkUserToken = req.userData.pkUser || 0;
+  let pkDriverToken = req.userData.pkDriver || 0;
+  let pkPersonToken = req.userData.pkPerson || 0;
+
+  let sql = `CALL ts_sp_updateUsingVehicle(`;
+  sql += `${ pkDriverToken }, `;
+  sql += `${ pkVehicle }, `;
+  sql += `${ pkPersonToken }, `;
+  sql += `${ pkUserToken }, `;
+  sql += `'${ reqIp.getClientIp( req ) }'`;
+  sql += `);`;
+
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+
+    res.json({
+      ok: true,
+      showError: data[0].showError,
+      data: data[0],
+    });
+  });
+});
+
+VehicleRouter.get('/Usin/Get', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+  
+  let pkDriverToken = req.userData.pkDriver || 0;
+
+  let sql = `CALL ts_sp_getUsingDriver( ${ pkDriverToken } );`;
+
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+
+    res.json({
+      ok: true,
+      data: data[0]
+    });
+    
+  });
+
+});
+
 export default VehicleRouter;
