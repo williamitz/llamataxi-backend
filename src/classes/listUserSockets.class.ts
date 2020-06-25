@@ -150,8 +150,32 @@ export class ListUserSockets {
         return finded;
     }
 
-    onFindDriversHexCategory( category: string, hex: string ): UserSocket[] {
-        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.category === category && user.indexHex === hex );
+    onFindUserForPk( pk: number ): UserSocket {
+        const finded =  this.listUser.find( u => u.pkUser === pk );
+        if (!finded) {
+            return{
+                id: '',
+                userName: 'undefined', 
+                role: '', 
+                pkUser: 0, 
+                timer: 0, 
+                device: '', 
+                osID: '', 
+                indexHex: '',
+                pkCategory: 0,
+                category: '',
+                coords: {lat: 0, lng: 0},
+                onUpdateCoords() { return ''; },
+                onUpdateCategory() { return false }
+            };
+        }
+
+        return finded;
+    }
+
+    onFindDriversHex( hex: string ): UserSocket[] {
+        // && user.category === category 
+        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex );
     }
 
     onUpdateTime( id: string ) {

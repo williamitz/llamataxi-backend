@@ -39,7 +39,7 @@ export default class MainServer {
         this.pkJournal = 0;
         this.nameJournal = '';
         this.percentRate = 0;
-        this.radiusPentagon = 6;
+        this.radiusPentagon = 7;
     }
 
     private listenSockets(){
@@ -52,6 +52,7 @@ export default class MainServer {
             mainSocket.currentPosition( client, this.io, this.radiusPentagon );
             mainSocket.newService( client, this.io, this.radiusPentagon );
             mainSocket.configCategoryUser( client );
+            mainSocket.newOfferDriver( client, this.io );
         });
     }
 

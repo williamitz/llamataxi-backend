@@ -25,3 +25,10 @@ interface ICoords {
     lat: number;
     lng: number;
 }
+
+export interface IBodyOffer {
+    pkService: number;
+    pkOffer: number;
+    rateOffer: number;
+    isClient: boolean;
+}

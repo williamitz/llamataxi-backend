@@ -6,13 +6,18 @@ import IResponse from '../interfaces/resp_promise.interface';
 import SocketIO from 'socket.io';
 import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
+import { UserSocket } from '../classes/userSocket.class';
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
 
 export const connectUser = ( client: Socket ) => {
+
     listUser.onAddUser( client.id );
     console.log('usuario conectado', client.id);
+    // console.log('clientes configurados', listUser.onGetUsers());
+    // client.on('connection', (payload: any, callback: Function) => {
+    // });
 }
 
 export const singUser = ( client: Socket, io: SocketIO.Server ) => {
@@ -34,7 +39,13 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         }
         client.join( payload.device, (err: any) => {
             if (err) {
-                console.error('Ocurrio un error al agregar usuario en la sala');
+                console.error(`Ocurrio un error al agregar usuario en la sala ${ payload.device }`);
+            } 
+        });
+
+        client.join( payload.role, (err: any) => {
+            if (err) {
+                console.error(`Ocurrio un error al agregar usuario en la sala ${ payload.role }`);
             } 
         });
         
@@ -42,7 +53,7 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         console.log('clientes configurados', listUser.onGetUsers());
         onSingSocketDB(payload.pkUser, payload.osID, true).then( (resSql) => {
 
-            callback({
+            return callback({
                 ok: true, 
                 message: 'Cliente socket configurado con éxito :D',
                 data: resSql.data
@@ -112,18 +123,73 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
      */
 
     client.on('new-service', ( payload: any, callback: Function ) => {
+        /** payload
+         * codeCategory: this.bodyService.codeCategory,
+            coords: {
+                    lat: this.bodyService.coordsOrigin.lat,
+                    lng: this.bodyService.coordsOrigin.lng
+            }
+         */
+        const indexHex = h3.geoToH3( payload.coords.lat, payload.coords.lng, radiusPentagon );
+        const drivers = listUser.onFindDriversHex( indexHex );
+        // codeCategory
 
-        const indexHex = h3.geoToH3( payload.coords.lat, payload.coords.lat, radiusPentagon );
-        const drivers = listUser.onFindDriversHexCategory( payload.codeCategory, indexHex );
+        // obtener el padre de la ubicación dada en un radio mas grande
+        const indexParent = h3.h3ToParent( indexHex , 9);
+
+        // extraer los indices hijos de un pentágono con radio 6 del indice padre
+        const indexChildren: string[] = h3.h3ToChildren( indexParent , 6);
+
+        // notificar a los conductores ue se encuentren en los índices hijos
         
         if (drivers.length > 0 ) {
+
+            let driverNotify:UserSocket[] = [];
+
+            switch (payload.codeCategory) {
+                case 'BASIC':
+                    driverNotify = drivers;
+                    break;
+                    case 'STANDAR':
+                        driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
+                        break;
+                        case 'PREMIUM':
+                            driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
+                            break;
             
-            drivers.forEach( driver => {
+                default:
+                    driverNotify = drivers;
+                    break;
+            }
 
-                io.in( driver.id ).emit('new-service', {});
+            // notificar a los conductores que estén dentro 
 
+            indexChildren.forEach( indexhex => {
+
+                // io.to( 'DRIVER_ROLE' ).emit( 'new-service', {} );
+                io.to( indexhex ).emit( 'new-service', { data: payload.data } );
+            });
+
+            
+            // driverNotify.forEach( driver => {
+
+            //     io.in( driver.id ).emit('new-service', {});
+                
+            // });
+
+            return callback({
+                ok: true,
+                data: driverNotify,
+                total: driverNotify.length
             });
         }
+
+        callback({
+            ok: false,
+            error: {
+                message: 'No se encontraron conductores para notificar'
+            }
+        });
 
     });
 }
@@ -219,7 +285,7 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
         io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
         onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
             
-            callback( resSql );
+            // callback( {ok: true, data: resSql} );
             console.log('Se desconecto un usuario', resSql);
             
         }).catch( e => {
@@ -237,6 +303,24 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
     client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
         const user = listUser.onFindUser( client.id );
         const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
+
+        // agregar al usuario a la sala con el indice del pentágono en el que se encuentra
+
+        if (user.indexHex !== '') {
+            client.leave( user.indexHex, (err: any) => {
+                if (err) {
+                    console.error(`Error al expulsar a ${ user.userName } de la sala ${ user.indexHex }`);
+                }
+            });
+        }
+
+        user.indexHex = indexHex;
+
+        client.join( indexHex, (err: any) => {
+            if (err) {
+                console.error(`Error al agregar a ${ user.userName } en la sala ${ indexHex }`);
+            }
+        });
         
         onUpdateCoords( user.pkUser, payload.lat, payload.lng, indexHex ).then( () => {
             
@@ -257,6 +341,23 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
     });
 
 };
+
+// escuchando cuando un conductor acepta o envía una oferta
+export const newOfferDriver = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('newOffer-driver', (payload: any, callback: Function) => {
+        // newOffer-driver
+        const userClient = listUser.onFindUserForPk( Number( payload.pkClient ) );
+
+        console.log('emitiendo a usuario socket', userClient.id);
+        if (userClient.pkUser !== 0) {
+            io.to( userClient.id ).emit('newOffer-service', {});
+            callback({ok: true, message: 'Sen emitió a cliente socket'})
+        }
+
+        // callback( {ok: false, message: 'Cliente no conectado' } );
+
+    });
+}
 
 function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<IResponse> {
     

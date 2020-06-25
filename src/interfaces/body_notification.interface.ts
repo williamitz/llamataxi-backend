@@ -5,6 +5,7 @@ export interface IBodyNotification {
   notificationTitle: string;
   notificationSubTitle: string;
   notificationMessage: string;
+  urlShow: string;
   sended: number;
   dateSend: Date;
   readed: number;

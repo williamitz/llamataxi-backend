@@ -67,8 +67,16 @@ NotificationRouter.post("/Notification/Add", [verifyToken], (req: any, res: Resp
    * 
    */
 
-  let sql = `CALL as_sp_addNotification( ${body.fkUserEmisor}, ${body.fkUserReceptor}, '${body.notificationTitle}', '${body.notificationSubTitle}', '${body.notificationMessage}', ${pkUserToken} , 
-  '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL as_sp_addNotification( `;
+  sql += `${body.fkUserEmisor}, `;
+  sql += `${body.fkUserReceptor}, `;
+  sql += `'${body.notificationTitle}', `;
+  sql += `'${body.notificationSubTitle}', `;
+  sql += `'${body.notificationMessage}', `;
+  sql += `'${ body.urlShow || '' }',`
+  sql += `${pkUserToken} ,`;
+  sql += `'${reqIp.getClientIp(req)}'`;
+  sql += ` );`;  
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
