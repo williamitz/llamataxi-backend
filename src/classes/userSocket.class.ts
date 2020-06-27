@@ -5,6 +5,7 @@ export class UserSocket {
     public pkUser: number;
     public role: string;
     public userName: string;
+    public nameComplete: string;
     public timer: number;
     public device: string;
     public osID: string;
@@ -18,6 +19,7 @@ export class UserSocket {
         this.pkUser = 0;
         this.role = '';
         this.userName = '';
+        this.nameComplete = '';
         this.timer = 0;
         this.device = '';
         this.osID = '';

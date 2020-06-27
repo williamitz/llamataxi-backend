@@ -97,3 +97,21 @@ export let verifyDriverRole = ( req: any, res: Response, next: NextFunction ) =>
 
     next();
 }
+
+export let verifyDriverClientRole = ( req: any, res: Response, next: NextFunction ) => {
+    
+    let role = req.userData.role || 'xD';
+
+    let rolesAllow = ['DRIVER_ROLE', 'CLIENT_ROLE'];
+
+    if ( !rolesAllow.includes( role )) {
+        return res.status(401).json({
+            ok: false,
+            error: {
+                message: 'Acceso restringido!, comuniquese con el administrador.'
+            }
+        });
+    }
+
+    next();
+}

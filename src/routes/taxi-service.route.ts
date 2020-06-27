@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { verifyToken, verifyClientRole, verifyDriverRole } from '../middlewares/token.mdd';
+import { verifyToken, verifyClientRole, verifyDriverRole, verifyDriverClientRole } from '../middlewares/token.mdd';
 import MainServer from '../classes/mainServer.class';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { IBodyService, IBodyOffer } from '../interfaces/body_service.interface';
@@ -91,6 +91,8 @@ TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, 
     sql += `${ body.rateHistory }, `;
     sql += `${ body.rateService }, `;
     sql += `${ body.minRatePrc }, `;
+    sql += `${ body.isMinRate }, `;
+    
     sql += `'${ body.paymentType }', `;
     sql += `'${ indexHex }', `;
 
@@ -197,7 +199,7 @@ TServiceRouter.get('/Services/Driver/Total', [verifyToken, verifyDriverRole], (r
 
     let sql =  `CALL ts_sp_overallPageServicesForDriver( ${ fkUser });`;
     
-    // console.log('total services', sql);
+    console.log('total services', sql);
 
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
@@ -289,7 +291,7 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
     
 });
 
-TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
     let fkUser = req.userData.pkUser || 0;
     let body: IBodyOffer = req.body;
 
@@ -298,13 +300,20 @@ TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverRole], (req: 
     IN `InRateOffer` float(10,2),
     IN `InIsClient` tinyint,
     IN `InFkDriver` INT -- pkuser**/
+    /**
+     * fkDriver: 2
+        isClient: true
+        pkOffer: 1
+        pkService: 2
+        rateOffer: 4.16
+     */
 
     let sql = `CALL ts_sp_addOfferService(`;
     sql += `${ body.pkService },`;
     sql += `${ body.pkOffer }, `;
     sql += `${ body.rateOffer }, `;
     sql += `${ body.isClient }, `;
-    sql += `${ fkUser }`;
+    sql += `${ body.fkDriver }`;
     sql += `);`;
     
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
@@ -326,43 +335,43 @@ TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverRole], (req: 
 
 });
 
-TServiceRouter.post('/Service/AcceptOffer', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+// TServiceRouter.post('/Service/AcceptOffer', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
     
-    let fkUser = req.userData.pkUser || 0;
-    let body: IBodyOffer = req.body;
+//     let fkUser = req.userData.pkUser || 0;
+//     let body: IBodyOffer = req.body;
 
-    /**
-     *  IN `InPkService` int,
-        IN `InPkOffer` int,
-        IN `InRateOffer` float(10,2),
-        IN `InPkDriver` int)
-     */
+//     /**
+//      *  IN `InPkService` int,
+//         IN `InPkOffer` int,
+//         IN `InRateOffer` float(10,2),
+//         IN `InPkDriver` int)
+//      */
 
-    let sql = `CALL ts_sp_acceptedOfferDriver(`;
-    sql += `${ body.pkService }, `;
-    sql += `${ body.pkOffer }, `;
-    sql += `${ body.rateOffer }, `;
-    sql += `${ fkUser } `;
-    sql += `);`;
+//     let sql = `CALL ts_sp_acceptedOfferDriver(`;
+//     sql += `${ body.pkService }, `;
+//     sql += `${ body.pkOffer }, `;
+//     sql += `${ body.rateOffer }, `;
+//     sql += `${ fkUser } `;
+//     sql += `);`;
 
-    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+//     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
         
-        if (error) {
-            return res.status(400).json({
-                ok: false,
-                error
-            });
-        }
+//         if (error) {
+//             return res.status(400).json({
+//                 ok: false,
+//                 error
+//             });
+//         }
 
-        res.json({
-            ok: true,
-            showError: data[0].showError,
-            data: data[0]
-        });
+//         res.json({
+//             ok: true,
+//             showError: data[0].showError,
+//             data: data[0]
+//         });
 
-    });
+//     });
     
-});
+// });
 
 TServiceRouter.get('/Offer/Client', [verifyToken], (req: any, res: Response) => {
     let page = req.query.page || 0;
@@ -406,6 +415,47 @@ TServiceRouter.get('/Offer/Client/Total', [verifyToken], (req: any, res: Respons
         });
 
     });
+
+});
+
+TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+    
+    let fkUser = req.userData.pkUser || 0;
+    let body: IBodyOffer = req.body;
+
+    /**IN `InPkService` bigint,
+        IN `InFkOffer` bigint,
+        IN `InFkDriver` int, #pkuser del conductor
+        IN `InRate` float(10,2),
+        IN `InFkUser` int,**/
+
+    let sql = `CALL ts_sp_acceptOfferClient(`;
+    sql += `${ body.pkService },`;
+    sql += `${ body.pkOffer }, `;
+    sql += `${ body.fkDriver }, `;
+    sql += `${ body.rateOffer }, `;
+    sql += `${ fkUser }, `;
+    sql += `'${ reqIp.getClientIp( req ) }'`;
+    sql += `);`;
+    
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    });
+
+        
 
 });
 

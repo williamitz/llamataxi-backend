@@ -7,6 +7,7 @@ import SocketIO from 'socket.io';
 import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
+import { IOffer } from '../interfaces/offer.interface';
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
@@ -25,9 +26,12 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         const ok = listUser.onSingUser( client.id,
                                         payload.pkUser,
                                         payload.userName,
+                                        payload.nameComplete,
                                         payload.role,
                                         payload.device,
-                                        payload.osID || '' 
+                                        payload.osID || '',
+                                        payload.pkCategory || 0,
+                                        payload.codeCategory || ''
                                         );
         if (!ok) {            
             callback({
@@ -135,12 +139,18 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
         // codeCategory
 
         // obtener el padre de la ubicación dada en un radio mas grande
-        const indexParent = h3.h3ToParent( indexHex , 9);
+        const indexParent = h3.h3ToParent( indexHex , 2);
 
         // extraer los indices hijos de un pentágono con radio 6 del indice padre
-        const indexChildren: string[] = h3.h3ToChildren( indexParent , 6);
+        const indexChildren: string[] = h3.h3ToChildren( indexParent , radiusPentagon);
 
         // notificar a los conductores ue se encuentren en los índices hijos
+        let response = {
+            ok: true,
+            data: {},
+            total: 0,
+            error: {}
+        };
         
         if (drivers.length > 0 ) {
 
@@ -167,29 +177,38 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             indexChildren.forEach( indexhex => {
 
                 // io.to( 'DRIVER_ROLE' ).emit( 'new-service', {} );
-                io.to( indexhex ).emit( 'new-service', { data: payload.data } );
+                io.in( indexhex ).emit( 'new-service', { data: payload.data } );
             });
 
-            
-            // driverNotify.forEach( driver => {
-
-            //     io.in( driver.id ).emit('new-service', {});
-                
-            // });
-
-            return callback({
+            response = {
                 ok: true,
                 data: driverNotify,
-                total: driverNotify.length
+                total: driverNotify.length,
+                error: {}
+            };
+        } else {
+            console.log('hijos cercanos ', indexChildren);
+            indexChildren.forEach( indexHex => {
+                io.in( indexHex ).emit( 'new-service', { data: payload.data } );
+                drivers.push(...listUser.onFindDriversHex( indexHex ) );
             });
+
+            drivers.forEach( driver => {
+
+                io.in( driver.id ).emit( 'new-service', { data: payload.data } );
+            });
+            
+            response = {
+                ok: false,
+                data: [],
+                total: 0,
+                error: {
+                    message: 'No se encontraron conductores para notificar'
+                }
+            };
         }
 
-        callback({
-            ok: false,
-            error: {
-                message: 'No se encontraron conductores para notificar'
-            }
-        });
+        callback( response );
 
     });
 }
@@ -217,34 +236,37 @@ export const configCategoryUser = ( client: Socket ) => {
                     });
                 }
             });
-
-            user.onUpdateCategory( payload.pkCategory , payload.codeCategory );
-            client.join( payload.codeCategory , (error: any) => {
-                if (error) {
-                    return callback({
-                        ok: false,
-                        error:{ 
-                            message: `Error al agregar a sala ${ user.category } :(` 
-                        }
-                    });
-                }
-            });
-            
-            onUpdateCategoryUser( user.pkUser, payload.pkCategory ).then( (res) => {
-
-                callback({ok: true,
-                    message: `Cambio de categoría con éxito :D`
-                });
-
-            }).catch( (e) => {
-                
-                callback({ok: false,
-                    message: `Error interno en base de datos`,
-                    error: e
-                });
-
-            });
         }
+        user.pkCategory = payload.pkCategory;
+        user.category = payload.codeCategory;
+        console.log('categoria cambiada', payload); 
+        console.log('categoria cambiada', user);
+        // user.onUpdateCategory( payload.pkCategory , payload.codeCategory );
+        client.join( payload.codeCategory , (error: any) => {
+            if (error) {
+                return callback({
+                    ok: false,
+                    error:{ 
+                        message: `Error al agregar a sala ${ user.category } :(` 
+                    }
+                });
+            }
+        });
+        
+        onUpdateCategoryUser( user.pkUser, payload.pkCategory ).then( (res) => {
+
+            callback({ok: true,
+                message: `Cambio de categoría con éxito :D`
+            });
+
+        }).catch( (e) => {
+            
+            callback({ok: false,
+                message: `Error interno en base de datos`,
+                error: e
+            });
+
+        });
     });
 };
 
@@ -350,10 +372,38 @@ export const newOfferDriver = ( client: Socket, io: SocketIO.Server ) => {
 
         console.log('emitiendo a usuario socket', userClient.id);
         if (userClient.pkUser !== 0) {
-            io.to( userClient.id ).emit('newOffer-service', {});
+            io.in( userClient.id ).emit('newOffer-service', {});
             callback({ok: true, message: 'Sen emitió a cliente socket'})
         }
 
+        // callback( {ok: false, message: 'Cliente no conectado' } );
+
+    });
+}
+
+// escuchamos cuando el cliente hace una contraoferta o acepta e inicia la carrera
+export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('newOffer-client', (payload: any, callback: Function) => {
+        // pkDriver, pkService, accepted
+        const dataOffer: IOffer = payload.dataOffer;
+        const userDriver = listUser.onFindUserForPk( Number( dataOffer.fkDriver ) );
+        const userClient = listUser.onFindUser( client.id );
+        dataOffer.nameComplete = userClient.nameComplete;
+        dataOffer.osId = userClient.osID;
+
+
+        /**
+         * P.nameComplete,
+	        U.osId
+         */
+
+        console.log('emitiendo a conductor socket', userDriver.id);
+        if (userDriver.pkUser !== 0) {
+            io.in( userDriver.id ).emit('newOffer-service-client', { dataOffer, accepted: payload.accepted } );
+            return callback({ok: true, message: 'Sen emitió a conductor socket'})
+        }
+        
+        callback({ok: false, message: 'conductor desconectado'});
         // callback( {ok: false, message: 'Cliente no conectado' } );
 
     });

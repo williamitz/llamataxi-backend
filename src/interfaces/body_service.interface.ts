@@ -16,6 +16,7 @@ export interface IBodyService {
     minutesText: string;
     // rate: number;
     minRatePrc: number;
+    isMinRate: boolean;
     paymentType: string;
     rateHistory: number;
     rateService: number;
@@ -31,4 +32,5 @@ export interface IBodyOffer {
     pkOffer: number;
     rateOffer: number;
     isClient: boolean;
+    fkDriver: number;
 }

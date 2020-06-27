@@ -29,7 +29,8 @@ export class ListUserSockets {
             console.error('No se encontró usuario socket');
             return{
                 id: '',
-                userName: 'undefined', 
+                userName: 'undefined',
+                nameComplete: '',
                 role: '', 
                 pkUser: 0, 
                 timer: 0, 
@@ -48,7 +49,7 @@ export class ListUserSockets {
         return finded;
     }
 
-    onSingUser( id: string, pkUser: number, userName: string, role: string, device: string, osID = '' ): boolean {
+    onSingUser( id: string, pkUser: number, userName: string, nameComplete: string, role: string, device: string, osID = '', pkCategory = 0, codeCategory = 'no especificado' ): boolean {
         // const findUser = this.listUser.find( user => user.pkUser === pkUser );
         // if (findUser) {
         //     console.error('Ya existe un usuario configurado con este pk');
@@ -63,9 +64,12 @@ export class ListUserSockets {
         finded.pkUser = pkUser,
         finded.role = role;
         finded.userName = userName;
+        finded.nameComplete = nameComplete;
         finded.timer = new Date().getTime();
         finded.device = device;
         finded.osID = osID;
+        finded.pkCategory = pkCategory;
+        finded.category = codeCategory;
         
         return true;
     }
@@ -80,6 +84,7 @@ export class ListUserSockets {
         finded.pkUser = 0,
         finded.role = '';
         finded.userName = '';
+        finded.nameComplete = '';
         finded.timer = 0;
         finded.device = '';
         finded.osID = '';
@@ -132,7 +137,8 @@ export class ListUserSockets {
         if (!finded) {
             return{
                 id: '',
-                userName: 'undefined', 
+                userName: 'undefined',
+                nameComplete: '',
                 role: '', 
                 pkUser: 0, 
                 timer: 0, 
@@ -155,7 +161,8 @@ export class ListUserSockets {
         if (!finded) {
             return{
                 id: '',
-                userName: 'undefined', 
+                userName: 'undefined',
+                nameComplete: '',
                 role: '', 
                 pkUser: 0, 
                 timer: 0, 

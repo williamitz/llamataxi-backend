@@ -53,6 +53,7 @@ export default class MainServer {
             mainSocket.newService( client, this.io, this.radiusPentagon );
             mainSocket.configCategoryUser( client );
             mainSocket.newOfferDriver( client, this.io );
+            mainSocket.newOfferClient( client, this.io );
         });
     }
 
