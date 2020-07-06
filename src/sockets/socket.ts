@@ -239,8 +239,8 @@ export const configCategoryUser = ( client: Socket ) => {
         }
         user.pkCategory = payload.pkCategory;
         user.category = payload.codeCategory;
-        console.log('categoria cambiada', payload); 
-        console.log('categoria cambiada', user);
+        // console.log('categoria cambiada', payload); 
+        // console.log('categoria cambiada', user);
         // user.onUpdateCategory( payload.pkCategory , payload.codeCategory );
         client.join( payload.codeCategory , (error: any) => {
             if (error) {
@@ -367,19 +367,19 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
 // escuchando cuando un conductor acepta o envía una oferta
 export const newOfferDriver = ( client: Socket, io: SocketIO.Server ) => {
     client.on('newOffer-driver', (payload: any, callback: Function) => {
-        // newOffer-driver
         const userClient = listUser.onFindUserForPk( Number( payload.pkClient ) );
 
-        console.log('emitiendo a usuario socket', userClient.id);
+        // console.log('emitiendo a usuario socket', userClient.id);
         if (userClient.pkUser !== 0) {
-            io.in( userClient.id ).emit('newOffer-service', {});
-            callback({ok: true, message: 'Sen emitió a cliente socket'})
+            // enviar data de oferta
+            io.in( userClient.id ).emit('newOffer-service', { dataOffer: payload.dataOffer });
+            callback({ok: true, message: 'Se emitió a cliente socket'})
         }
 
         // callback( {ok: false, message: 'Cliente no conectado' } );
 
     });
-}
+};
 
 // escuchamos cuando el cliente hace una contraoferta o acepta e inicia la carrera
 export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
@@ -388,14 +388,8 @@ export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
         const dataOffer: IOffer = payload.dataOffer;
         const userDriver = listUser.onFindUserForPk( Number( dataOffer.fkDriver ) );
         const userClient = listUser.onFindUser( client.id );
-        dataOffer.nameComplete = userClient.nameComplete;
-        dataOffer.osId = userClient.osID;
-
-
-        /**
-         * P.nameComplete,
-	        U.osId
-         */
+        // dataOffer.nameComplete = userClient.nameComplete;
+        // dataOffer.osId = userClient.osID;
 
         console.log('emitiendo a conductor socket', userDriver.id);
         if (userDriver.pkUser !== 0) {
@@ -407,7 +401,94 @@ export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
         // callback( {ok: false, message: 'Cliente no conectado' } );
 
     });
-}
+};
+
+// escuchamos cuando el conductor esta ocupado o desocupado de un servicio de taxi
+export const changeOccupiedDriver = ( client: Socket ) => {
+    client.on('occupied-driver', ( payload: any, callback: Function ) => {
+        const driverSocket = listUser.onFindUser( client.id );
+
+        if (driverSocket.pkUser === 0) {
+            return callback({
+                ok: false,
+                message: 'No se encontró conductor'
+            });
+        }
+
+        driverSocket.occupied = payload.occupied;
+
+        onUpdateOccupied( driverSocket.pkUser, payload.occupied ).then( (res) => {
+
+            callback({
+                ok: true,
+                message: 'Se cambió estado del conductor'
+            });
+
+        }).catch( (e) => {
+            callback({
+                ok: false,
+                error: e
+            });
+        });
+        
+        // cambiar bandera en base de datos
+
+    });
+};
+
+export const currentPositionService = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('current-position-driver-service', ( payload: any, callback: Function ) => {
+        const clientSocket = listUser.onFindUserForPk( payload.pkClient );
+
+        if (clientSocket.pkUser === 0) {
+            return callback({
+                ok: false,
+                message: 'No se encontró cliente conectado'
+            });
+        }
+
+        io.in( clientSocket.id ).emit('current-position-driver', payload);
+    
+        callback({
+            ok: true,
+            message: 'Cliente notificado'
+        });
+
+    });
+};
+
+export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
+
+    client.on('status-travel-driver', (payload: any, callback: Function) => {
+        const clientSocket = listUser.onFindUserForPk( payload.pkClient );
+
+        if (clientSocket.pkUser === 0) {
+            return callback({
+                ok: false,
+                message: 'No se encontró cliente conectado'
+            });
+        }
+
+        io.in( clientSocket.id ).emit('status-travel-driver', payload);
+
+        onUpdateTravelService( payload ).then( (resTravel) => {
+            
+            console.log('Se cambio fechas de llegada servicio', resTravel);
+            callback({
+                ok: true,
+                message: 'Cliente notificado'
+            });
+            
+        }).catch( e => {
+            console.log('Error al cambiar fechas llegada servicio', e);
+            callback({
+                ok: true,
+                message: 'Cliente notificado'
+            });
+        });
+
+    });
+};
 
 function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<IResponse> {
     
@@ -551,5 +632,70 @@ function onUpdateCategoryUser( pkUser: number, pkCategory: number ): Promise<IRe
 
         });
         
+    });
+}
+
+function onUpdateOccupied( pkUser: number, occupied: boolean ): Promise<IResponse> {
+    return new Promise( (resolve, reject) => {
+
+        let sql = `CALL ts_sp_updateOccupied( ${ pkUser }, ${ occupied } );`;
+
+        mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
+            
+            if (error) {
+                return reject({ok: false, error});
+            }
+            
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            resolve({ok: true, data: json[0]});
+
+        });
+        
+    });
+}
+
+function onUpdateTravelService( payload: any ): Promise<IResponse> {
+    return new Promise( (resolve, reject) => {
+        /*
+        IN `InPkService` int,
+        IN `InRunOrigin` tinyint,
+        IN `InFinishOrigin` tinyint,
+        IN `InRunDestination` tinyint,
+        IN `InFinishDestination` tinyint
+
+        pkClient: this.dataService.fkClient,
+        pkService: this.dataService.pkService,
+        runOrigin: this.runOrigin,
+        finishOrigin: this.finishOrigin,
+        runDestination: this.runDestination,
+        finishDestination: this.finishDestination,
+        loadRoute: this.loadRoute,
+        loadCalification: this.loadCalification
+            
+        */
+
+        let sql = `CALL ts_sp_updateTravelService( `;
+        sql += `${ payload.pkService }, `;
+        sql += `${ payload.runOrigin }, `;
+        sql += `${ payload.finishOrigin }, `;
+        sql += `${ payload.runDestination }, `;
+        sql += `${ payload.finishDestination }`;
+        sql += `);`;
+
+        mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
+            
+            if (error) {
+                return reject({ok: false, error});
+            }
+            
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            resolve({ok: true, data: json[0]});
+
+        });
+        // 
     });
 }

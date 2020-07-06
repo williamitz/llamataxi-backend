@@ -13,6 +13,7 @@ export class UserSocket {
     public pkCategory: number;
     public category: string;
     public coords: ICoords;
+    public occupied: boolean;
 
     constructor( id: string ) {
         this.id = id;
@@ -27,6 +28,7 @@ export class UserSocket {
         this.pkCategory = 0;
         this.category = 'No especificado';
         this.coords = { lat: 0, lng: 0 };
+        this.occupied = false;
     }
 
     onUpdateCoords( lat: number, lng: number, radiusPentagon: number ): string{
@@ -37,10 +39,10 @@ export class UserSocket {
         return this.indexHex;
     }
 
-    onUpdateCategory( pkCategory: number, nameCategory: string ): boolean {
-        this.pkCategory = pkCategory;
-        this.category = nameCategory
-        return true;
-    }
+    // onUpdateCategory( pkCategory: number, nameCategory: string ): boolean {
+    //     this.pkCategory = pkCategory;
+    //     this.category = nameCategory
+    //     return true;
+    // }
 
 }

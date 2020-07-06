@@ -33,4 +33,5 @@ export interface IBodyOffer {
     rateOffer: number;
     isClient: boolean;
     fkDriver: number;
+    fkVehicle: number;
 }

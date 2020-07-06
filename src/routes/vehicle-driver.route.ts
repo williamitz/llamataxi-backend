@@ -234,11 +234,12 @@ VehicleRouter.put('/Using/Vehicle/:pkVehicle', [verifyToken, verifyDriverRole], 
   });
 });
 
-VehicleRouter.get('/Usin/Get', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+VehicleRouter.get('/Usin/Get/:pkDriver', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
   
-  let pkDriverToken = req.userData.pkDriver || 0;
+  let pkDriver = req.params.pkDriver || 0;
 
-  let sql = `CALL ts_sp_getUsingDriver( ${ pkDriverToken } );`;
+  let sql = `CALL ts_sp_getUsingDriver( ${ pkDriver } );`;
+  console.log(sql); 
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {

@@ -41,7 +41,8 @@ export class ListUserSockets {
                 category: '',
                 coords: {lat: 0, lng: 0},
                 onUpdateCoords() { return ''; },
-                onUpdateCategory() { return false }
+                occupied: false,
+                // onUpdateCategory() { return false }
             };
         }
 
@@ -148,8 +149,9 @@ export class ListUserSockets {
                 pkCategory: 0,
                 category: '',
                 coords: {lat: 0, lng: 0},
+                occupied: false,
                 onUpdateCoords() { return ''; },
-                onUpdateCategory() { return false }
+                // onUpdateCategory() { return false }
             };
         }
 
@@ -172,8 +174,9 @@ export class ListUserSockets {
                 pkCategory: 0,
                 category: '',
                 coords: {lat: 0, lng: 0},
+                occupied: false,
                 onUpdateCoords() { return ''; },
-                onUpdateCategory() { return false }
+                // onUpdateCategory() { return false }
             };
         }
 
@@ -182,7 +185,7 @@ export class ListUserSockets {
 
     onFindDriversHex( hex: string ): UserSocket[] {
         // && user.category === category 
-        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex );
+        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false );
     }
 
     onUpdateTime( id: string ) {

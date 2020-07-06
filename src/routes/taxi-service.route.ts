@@ -313,7 +313,8 @@ TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], 
     sql += `${ body.pkOffer }, `;
     sql += `${ body.rateOffer }, `;
     sql += `${ body.isClient }, `;
-    sql += `${ body.fkDriver }`;
+    sql += `${ body.fkDriver }, `;
+    sql += `${ body.fkVehicle }`;
     sql += `);`;
     
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
@@ -335,43 +336,6 @@ TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], 
 
 });
 
-// TServiceRouter.post('/Service/AcceptOffer', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
-    
-//     let fkUser = req.userData.pkUser || 0;
-//     let body: IBodyOffer = req.body;
-
-//     /**
-//      *  IN `InPkService` int,
-//         IN `InPkOffer` int,
-//         IN `InRateOffer` float(10,2),
-//         IN `InPkDriver` int)
-//      */
-
-//     let sql = `CALL ts_sp_acceptedOfferDriver(`;
-//     sql += `${ body.pkService }, `;
-//     sql += `${ body.pkOffer }, `;
-//     sql += `${ body.rateOffer }, `;
-//     sql += `${ fkUser } `;
-//     sql += `);`;
-
-//     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
-        
-//         if (error) {
-//             return res.status(400).json({
-//                 ok: false,
-//                 error
-//             });
-//         }
-
-//         res.json({
-//             ok: true,
-//             showError: data[0].showError,
-//             data: data[0]
-//         });
-
-//     });
-    
-// });
 
 TServiceRouter.get('/Offer/Client', [verifyToken], (req: any, res: Response) => {
     let page = req.query.page || 0;
@@ -453,10 +417,30 @@ TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (
             data: data[0]
         });
 
-    });
+    }); 
 
-        
+});
 
+TServiceRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (req: Request, res: Response) => {
+    let pkService = req.params.pk || 0;
+
+    let sql = `CALL ts_sp_getInfoService( ${ pkService } );`;
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data: data[0]
+        });
+
+    }); 
 });
 
 

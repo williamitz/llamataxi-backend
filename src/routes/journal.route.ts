@@ -3,9 +3,10 @@ import { IBodyJournal } from "./../interfaces/body_journal.interface";
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
+import MainServer from "../classes/mainServer.class";
 
 let JournalRouter = Router();
-
+let mainServer = MainServer.instance;
 let MysqlCon = MysqlClass.instance;
 
 JournalRouter.get("/Journal/Get", [verifyToken], (req: Request, res: Response) => {
@@ -90,18 +91,27 @@ JournalRouter.put("/Journal/Update/:id", [verifyToken], (req: any, res: Response
   let sql = `CALL cc_sp_updateJournal( ${pkParam}, '${body.nameJournal}', '${body.codeJournal}','${body.hourStart }', '${body.hourEnd }', ${pkUserToken} ,'${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
         error,
       });
     }
+
+    if (data[0].showError === 0) {
+      mainServer.loadJournal();
+      // mainServer.listenJournal();
+    }
+
     res.json({
       ok: true,
       showError: data[0].showError,
       data: data[0],
     });
+  
   });
+
 });
 
 JournalRouter.delete( "/Journal/Delete/:id/:statusRegister", [verifyToken], (req: Request, res: Response) => {

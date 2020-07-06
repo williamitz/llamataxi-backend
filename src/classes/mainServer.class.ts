@@ -26,6 +26,7 @@ export default class MainServer {
     private nameJournal: string;
 
     private percentRate: number;
+    private intervalJorunal: NodeJS.Timeout;
 
     constructor() {
         this.app = express();
@@ -40,6 +41,7 @@ export default class MainServer {
         this.nameJournal = '';
         this.percentRate = 0;
         this.radiusPentagon = 7;
+        this.intervalJorunal = setInterval(() => {}, 60000);
     }
 
     private listenSockets(){
@@ -54,10 +56,14 @@ export default class MainServer {
             mainSocket.configCategoryUser( client );
             mainSocket.newOfferDriver( client, this.io );
             mainSocket.newOfferClient( client, this.io );
+            mainSocket.changeOccupiedDriver( client );
+            mainSocket.currentPositionService( client, this.io );
+            mainSocket.statusTravelDriver( client, this.io );
+            
         });
     }
 
-    private loadJournal() {
+    public loadJournal() {
         
         MysqlCon.onExecuteQuery('CALL ts_sp_getJurnalAll();', (error: any, data: any[]) => {
             if (error) {
@@ -67,6 +73,7 @@ export default class MainServer {
             let json = JSON.parse(dataString);
             
             this.journal_db = json;
+            this.listenJournal();
         });
 
     }
@@ -84,13 +91,14 @@ export default class MainServer {
         });
     }
 
-    private listenTimer() {
+    private listenJournal() {
         // new moment.duration("1", "minutes").timer({ loop: true }, function () {
         //     console.log('Son las ', moment().format('HH:mm:ss'));
         // });
         // moment.duration("1", "minutes").
-
-        setInterval( () => {
+        console.log('iniciando interval jornada');
+        clearInterval( this.intervalJorunal );
+        this.intervalJorunal = setInterval( () => {
 
             let hour = Number( moment().format('HH') );
             let minutes = Number( moment().format('mm') );
@@ -126,8 +134,12 @@ export default class MainServer {
             });
 
             console.log('Son las ', moment().format('HH:mm') , ` - jornada ${ this.pkJournal } ${ this.nameJournal }`);
-        }, 60000)
+        }, 60000);
     }
+
+    // public stopIntervalJournal() {
+    //     clearInterval( this.intervalJorunal );
+    // }
     
     public getJournal(): IJournalDB {
         
@@ -185,7 +197,7 @@ export default class MainServer {
         this._httpServer.listen( this.port, callback() );
         this.loadPublic();
         this.loadJournal();
-        this.listenTimer();
+        // this.listenJournal();
         this.loadPercentRate();
     }
 
