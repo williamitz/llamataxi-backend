@@ -1,11 +1,12 @@
 import { Request, Response, Router } from 'express';
-import { verifyToken, verifyWebmasterRole } from '../middlewares/token.mdd';
+import { verifyToken, verifyWebmasterRole, verifyClientRole, verifyDriverRole } from '../middlewares/token.mdd';
 import { IBodyUser, IUserProfile } from '../interfaces/body_user.interface';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { SEED_KEY } from '../global/environments.global';
+import { IProfile } from '../interfaces/body_profile.interface';
 
 let UserRouter = Router();
 let MysqlCnn = MysqlClass.instance;
@@ -270,4 +271,148 @@ UserRouter.delete('/User/:pkUser/:status', [verifyToken, verifyWebmasterRole], (
         });
     });
 });
+
+
+// apis para configuración del perfil de los usuarios app móvil
+
+UserRouter.get('/User/Profile/App', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+    
+    let pkUserToken = req.userData.pkUser || 0;
+    let sql = `CALL cu_sp_getProfileClient(${ pkUserToken });`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data: data[0]
+        });
+    });
+
+});
+
+UserRouter.post('/User/Profile/Update/App', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+    
+    let pkUserToken = req.userData.pkUser || 0;
+    let pkPersonToken = req.userData.pkPerson || 0;
+    let body: IProfile = req.body;
+    /*
+    `cu_sp_updateProfileClient`(
+        IN `InPkUser` int,
+        IN `InPkPerson` int,
+        IN `InFkNationality` int,
+        IN `InFkTypeDoc` int,
+        IN `InDocument` varchar(20),
+        IN `InName` varchar(50),
+        IN `InSurname` varchar(50),
+        IN `InPhone` varchar(20),
+        IN `InEmail` varchar(80),
+        IN `InSex` CHAR(1),
+        IN `InBirthDate` varchar(20),
+        IN `InIpUser` varchar(20))
+    */
+    let sql = `CALL cu_sp_updateProfileClient(`;
+    sql += `${ pkUserToken }, `;
+    sql += `${ pkPersonToken }, `;
+    sql += `${ body.fkNationality }, `;
+    sql += `${ body.fkTypeDocument }, `;
+    sql += `'${ body.document }', `;
+    sql += `'${ body.name }', `;
+    sql += `'${ body.surname }', `;
+    sql += `'${ body.phone }', `;
+    sql += `'${ body.email }', `;
+    sql += `'${ body.sex }', `;
+    sql += `'${ body.brithDate }', `;
+    sql += `'${ body.aboutMe }', `;
+    sql += `'${ reqIp.getClientIp( req ) }' `;
+    sql += `);`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+    });
+
+});
+
+UserRouter.get('/Driver/Profile/App', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+    
+    let pkUserToken = req.userData.pkUser || 0;
+    let sql = `CALL cu_sp_getProfileDriver(${ pkUserToken });`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data: data[0]
+        });
+    });
+    
+});
+
+UserRouter.post('/Driver/Profile/Update/App', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+    
+    let pkUserToken = req.userData.pkUser || 0;
+    let pkPersonToken = req.userData.pkPerson || 0;
+    let pkDriverToken = req.userData.pkDriver || 0;
+    let body: IProfile = req.body;
+
+    let sql = `CALL cu_sp_updateProfileDriver(`;
+    sql += `${ pkUserToken }, `;
+    sql += `${ pkPersonToken }, `;
+    sql += `${ pkDriverToken }, `;
+    sql += `${ body.fkNationality }, `;
+    sql += `${ body.fkTypeDocument }, `;
+    sql += `'${ body.document }', `;
+    sql += `'${ body.name }', `;
+    sql += `'${ body.surname }', `;
+    sql += `'${ body.phone }', `;
+    sql += `'${ body.email }', `;
+    sql += `'${ body.sex }', `;
+    sql += `'${ body.brithDate }', `;
+    sql += `'${ body.dateLicenseExpiration }', `;
+    sql += `${ body.isEmployee }, `;
+    sql += `'${ body.aboutMe }', `;
+    sql += `'${ reqIp.getClientIp( req ) }' `;
+    sql += `);`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+    });
+    
+});
+
+//cu_sp_updateProfileClient
+
 export default UserRouter;

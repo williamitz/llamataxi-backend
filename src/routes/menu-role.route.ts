@@ -149,7 +149,7 @@ MenuRoleRouter.post('/MenuRole/Allow', [verifyToken], (req: any, res: Response) 
   let roleUser = req.userData.role || 'none_role';
 
   let sql = `CALL as_sp_getAllowMenu(${ fkUser }, '${ roleUser }', '${ url }');`;
-  // console.log(sql);
+
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
     if (error) {

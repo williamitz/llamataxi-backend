@@ -23,6 +23,7 @@
         "moment": "^2.26.0",
         "moment-timer": "^1.3.0",
         "mysql": "^2.18.1",
+        "onesignal-node": "^3.0.2",
         "request-ip": "^2.1.3",
         "socket.io": "^2.3.0"
     },

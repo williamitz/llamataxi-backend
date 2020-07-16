@@ -10,6 +10,7 @@ export interface IBodyUser {
     document: string;
     dateBirth: string;
     birthDate?: string;
+    brithDate?: string;
     email?: string;
     phone?: string;
     sex?: string;

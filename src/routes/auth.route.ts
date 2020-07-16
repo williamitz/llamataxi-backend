@@ -65,11 +65,22 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
 
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
 
-    let sql = `CALL as_sp_addDriver(${ body.fkTypeDocument }, ${ body.fkNationality }`;
-    sql += `,'${ body.name }', '${ body.surname }', '${ body.document }' `;
-    sql += `, ${ body.verifyReniec }, '${ body.email }', '${ body.phone }' `;
-    sql += `, '${ body.dateBirth }', '${ body.sex }', '${ body.userName }', '${ passEncrypt }' `;
-    sql += `, 'DRIVER_ROLE', ${ body.google }, '${ body.dateLicenseExpiration }', ${ body.isEmployee } `;
+    let sql = `CALL as_sp_addDriver(${ body.fkTypeDocument }`;
+    sql += `, ${ body.fkNationality }`;
+    sql += `, '${ body.name }'`;
+    sql += `, '${ body.surname }'`;
+    sql += `, '${ body.document }' `;
+    sql += `, ${ body.verifyReniec } `;
+    sql += `, '${ body.email }' `;
+    sql += `, '${ body.phone }' `;
+    sql += `, '${ body.brithDate }' `;
+    sql += `, '${ body.sex }' `;
+    sql += `, '${ body.userName }' `;
+    sql += `, '${ passEncrypt }' `;
+    sql += `, 'DRIVER_ROLE'`;
+    sql += `, ${ body.google } `;
+    sql += `, '${ body.dateLicenseExpiration }' `;
+    sql += `, ${ body.isEmployee } `;
     sql += `, '${ body.numberPlate }', ${ body.year }, '${ body.color }', '${ body.dateSoatExpiration }' `;
     sql += `, ${ body.isProper }, 0, '${ reqIp.getClientIp(req) }');`;
 

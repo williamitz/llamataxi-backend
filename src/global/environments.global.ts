@@ -9,3 +9,8 @@ export const USER_DB = process.env.USER_DB ||  'llamataxi'
 export const PASSWORD_DB = process.env.PASSWORD_DB ||  "p&DEw4oYjK#V"; 
 
 export const NAME_DB = process.env.NAME_DB || "llamataxi_db";
+
+// one signal config
+
+export const OS_APP = process.env.OS_APP || 'caa68993-c7a5-4a17-bebf-6963ba72519b';
+export const OS_KEY = process.env.OS_KEY ||  'Basic YTE5MmRjYjQtMjRkZi00Y2Q0LThkZDMtYWY3YjEyNjg0NzRh'; // 

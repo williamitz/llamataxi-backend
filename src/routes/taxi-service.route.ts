@@ -199,8 +199,6 @@ TServiceRouter.get('/Services/Driver/Total', [verifyToken, verifyDriverRole], (r
 
     let sql =  `CALL ts_sp_overallPageServicesForDriver( ${ fkUser });`;
     
-    console.log('total services', sql);
-
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
         if (error) {
@@ -274,7 +272,7 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
 
             
             json.forEach( service => {
-                console.log('es un indice válido', h3.h3IsValid( service.indexHex ));
+                // console.log('es un indice válido', h3.h3IsValid( service.indexHex ));
                 // service.polygon = geojson2h3.h3ToFeature( service.indexHex, {} ).geometry;
                 service.polygon = h3.h3ToGeoBoundary( service.indexHex, false );
                 service.center = h3.h3ToGeo( service.indexHex );
@@ -294,19 +292,6 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
 TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
     let fkUser = req.userData.pkUser || 0;
     let body: IBodyOffer = req.body;
-
-    /**IN `InPkService` int,
-    IN `InPkOffer` int,
-    IN `InRateOffer` float(10,2),
-    IN `InIsClient` tinyint,
-    IN `InFkDriver` INT -- pkuser**/
-    /**
-     * fkDriver: 2
-        isClient: true
-        pkOffer: 1
-        pkService: 2
-        rateOffer: 4.16
-     */
 
     let sql = `CALL ts_sp_addOfferService(`;
     sql += `${ body.pkService },`;
@@ -335,7 +320,6 @@ TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], 
     });
 
 });
-
 
 TServiceRouter.get('/Offer/Client', [verifyToken], (req: any, res: Response) => {
     let page = req.query.page || 0;
@@ -387,12 +371,6 @@ TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (
     let fkUser = req.userData.pkUser || 0;
     let body: IBodyOffer = req.body;
 
-    /**IN `InPkService` bigint,
-        IN `InFkOffer` bigint,
-        IN `InFkDriver` int, #pkuser del conductor
-        IN `InRate` float(10,2),
-        IN `InFkUser` int,**/
-
     let sql = `CALL ts_sp_acceptOfferClient(`;
     sql += `${ body.pkService },`;
     sql += `${ body.pkOffer }, `;
@@ -441,6 +419,47 @@ TServiceRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (
         });
 
     }); 
+});
+
+TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+    
+    let fkUser = req.userData.pkUser || 0;
+    let nameUser = req.userData.nameComple || '';
+    let pkService = req.params.id || 0;
+
+    let body = req.body;
+
+    let sql = `CALL ts_sp_deleteService( ${ pkService }, ${ fkUser }, '${ reqIp.getClientIp( req ) }' );`;
+    
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        if (data[0].showError === 0) {
+            // obtener el padre de la ubicación dada en un radio mas grande
+            const indexParent = h3.h3ToParent( body.indexHex , 2);
+    
+            // extraer los indices hijos de un pentágono con radio 6 del indice padre
+            const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
+            const msg = `${ nameUser }, ha cancelado el servicio.`;
+            indexChildren.forEach( indexHex => {
+                Server.io.in( indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    }); 
+
 });
 
 

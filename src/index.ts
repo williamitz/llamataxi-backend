@@ -20,12 +20,6 @@ server.app.use( cors({ credentials: true, origin: true  }) );
 
 server.app.use( MainRouter );
 
-// let test = cryptr.encrypt('123');
-// console.log(`enciptado`, '123' , '-', cryptr.encrypt('123'));
-// console.log(`desenciptado`, '123' , '-', cryptr.decrypt(test));
-
-// console.log('index', h3.geoToH3(-12.08296108245849600000, -77.05254364013672000000, 7));
-
 server.onRun( (error: any) => {
 
     if (error) return console.log('Error al levantar servidor, revise dependencias  :(');

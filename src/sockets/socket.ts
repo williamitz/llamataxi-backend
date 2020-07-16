@@ -118,14 +118,6 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
 // cuando se registra un nuevo servicio de taxi
 export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
 
-    /**
-     * codeCategory: this.bodyService.codeCategory,
-        coords: {
-                lat: this.bodyService.coordsOrigin.lat,
-                lng: this.bodyService.coordsOrigin.lng
-        }
-     */
-
     client.on('new-service', ( payload: any, callback: Function ) => {
         /** payload
          * codeCategory: this.bodyService.codeCategory,
@@ -187,7 +179,7 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 error: {}
             };
         } else {
-            console.log('hijos cercanos ', indexChildren);
+            // console.log('hijos cercanos ', indexChildren);
             indexChildren.forEach( indexHex => {
                 io.in( indexHex ).emit( 'new-service', { data: payload.data } );
                 drivers.push(...listUser.onFindDriversHex( indexHex ) );
@@ -391,7 +383,7 @@ export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
         // dataOffer.nameComplete = userClient.nameComplete;
         // dataOffer.osId = userClient.osID;
 
-        console.log('emitiendo a conductor socket', userDriver.id);
+        // console.log('emitiendo a conductor socket', userDriver.id);
         if (userDriver.pkUser !== 0) {
             io.in( userDriver.id ).emit('newOffer-service-client', { dataOffer, accepted: payload.accepted } );
             return callback({ok: true, message: 'Sen emitió a conductor socket'})
@@ -473,7 +465,7 @@ export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
 
         onUpdateTravelService( payload ).then( (resTravel) => {
             
-            console.log('Se cambio fechas de llegada servicio', resTravel);
+            // console.log('Se cambio fechas de llegada servicio', resTravel);
             callback({
                 ok: true,
                 message: 'Cliente notificado'
@@ -513,11 +505,11 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
         let userAT: any = listUser.onGetAdminSort( 'ATTENTION_ROLE' );
         let userIO: any = listUser.onFindUser( id );
         
-        console.log('user socket', userIO);
-        console.log('user attention', userAT);
+        // console.log('user socket', userIO);
+        // console.log('user attention', userAT);
         
         if (!userIO) {
-            console.log('no encontramos usuario socket');
+            // console.log('no encontramos usuario socket');
             resolve({
                 ok: false,
                 error: {
@@ -528,7 +520,7 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
 
         let sqlNoty = '';
         if (!userAT) {
-            console.log('no hay atencion al cliente');
+            // console.log('no hay atencion al cliente');
             let sqlUserAt = `CALL as_sp_getUserAttentionOf()`;
             mysqlCnn.onExecuteQuery(sqlUserAt, (err: any, dataOf: any[]) => {
                 

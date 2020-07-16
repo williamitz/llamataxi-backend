@@ -239,7 +239,6 @@ VehicleRouter.get('/Usin/Get/:pkDriver', [verifyToken, verifyDriverRole], (req: 
   let pkDriver = req.params.pkDriver || 0;
 
   let sql = `CALL ts_sp_getUsingDriver( ${ pkDriver } );`;
-  console.log(sql); 
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {

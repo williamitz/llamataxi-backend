@@ -131,7 +131,6 @@ ApplicationRouter.delete(
       req
     )}' );`;
 
-    console.log(sql);
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
       if (error) {
         return res.status(400).json({

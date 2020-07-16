@@ -51,11 +51,7 @@ export class ListUserSockets {
     }
 
     onSingUser( id: string, pkUser: number, userName: string, nameComplete: string, role: string, device: string, osID = '', pkCategory = 0, codeCategory = 'no especificado' ): boolean {
-        // const findUser = this.listUser.find( user => user.pkUser === pkUser );
-        // if (findUser) {
-        //     console.error('Ya existe un usuario configurado con este pk');
-        //     return false;
-        // }
+
         const finded = this.listUser.find( user => user.id === id  );
         if (!finded) {
             console.error('No se encontró usuario socket');

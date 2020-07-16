@@ -86,16 +86,12 @@ export default class MainServer {
 
             let dataString = JSON.stringify(data);
             let json = JSON.parse(dataString);
-            // console.log('porcentaje minimo', json);
             this.percentRate = json[0].percentRate || 0;
         });
     }
 
     private listenJournal() {
-        // new moment.duration("1", "minutes").timer({ loop: true }, function () {
-        //     console.log('Son las ', moment().format('HH:mm:ss'));
-        // });
-        // moment.duration("1", "minutes").
+
         console.log('iniciando interval jornada');
         clearInterval( this.intervalJorunal );
         this.intervalJorunal = setInterval( () => {
