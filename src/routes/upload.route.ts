@@ -235,6 +235,7 @@ function updateFileDriver( entity: string, idEntity: number, document: string, i
             ok: true,
             data: data[0],
             newFile: img,
+            document,
             message: 'Se subió exitosamente'
         });
     });

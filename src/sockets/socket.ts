@@ -75,7 +75,8 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
 };
 
 export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('logout-user', (payload: IUserSocket, callback: Function) => {
+
+    client.on('logout-user', (payload: any, callback: Function) => {
 
         const userLogout = listUser.onFindUser( client.id );
         const ok = listUser.onLogoutUser( client.id );
@@ -94,9 +95,9 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
             } 
         });
         
-        io.to('WEB').emit('user-disconnect', { pkUser: payload.pkUser });
+        io.to('WEB').emit('user-disconnect', { pkUser: userLogout.pkUser });
         console.log('clientes configurados', listUser.onGetUsers());
-        onSingSocketDB(payload.pkUser, payload.osID, false).then( (resSql) => {
+        onSingSocketDB(userLogout.pkUser, userLogout.osID, false).then( (resSql) => {
 
             callback({
                 ok: true, 
@@ -463,7 +464,7 @@ export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
 
         io.in( clientSocket.id ).emit('status-travel-driver', payload);
 
-        onUpdateTravelService( payload ).then( (resTravel) => {
+        onUpdateTravelService( payload, clientSocket.pkUser ).then( (resTravel) => {
             
             // console.log('Se cambio fechas de llegada servicio', resTravel);
             callback({
@@ -648,32 +649,21 @@ function onUpdateOccupied( pkUser: number, occupied: boolean ): Promise<IRespons
     });
 }
 
-function onUpdateTravelService( payload: any ): Promise<IResponse> {
+function onUpdateTravelService( payload: any, pkUser: number ): Promise<IResponse> {
     return new Promise( (resolve, reject) => {
         /*
         IN `InPkService` int,
-        IN `InRunOrigin` tinyint,
-        IN `InFinishOrigin` tinyint,
         IN `InRunDestination` tinyint,
-        IN `InFinishDestination` tinyint
-
-        pkClient: this.dataService.fkClient,
-        pkService: this.dataService.pkService,
-        runOrigin: this.runOrigin,
-        finishOrigin: this.finishOrigin,
-        runDestination: this.runDestination,
-        finishDestination: this.finishDestination,
-        loadRoute: this.loadRoute,
-        loadCalification: this.loadCalification
+        IN `InFinishDestination` tinyint,
+        IN `InPkUser` int
             
         */
 
         let sql = `CALL ts_sp_updateTravelService( `;
         sql += `${ payload.pkService }, `;
-        sql += `${ payload.runOrigin }, `;
-        sql += `${ payload.finishOrigin }, `;
         sql += `${ payload.runDestination }, `;
-        sql += `${ payload.finishDestination }`;
+        sql += `${ payload.finishDestination }, `;
+        sql += `${ pkUser }`;
         sql += `);`;
 
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {

@@ -65,7 +65,7 @@ export let verifyTokenUrl = ( req: any, res: Response, next: NextFunction ) => {
 export let verifyClientRole = ( req: any, res: Response, next: NextFunction ) => {
     
     let role = req.userData.role || 'xD';
-
+    console.log('rol usuario', role);
     let rolesAllow = ['CLIENT_ROLE'];
 
     if ( !rolesAllow.includes( role )) {

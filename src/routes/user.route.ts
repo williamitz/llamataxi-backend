@@ -275,14 +275,14 @@ UserRouter.delete('/User/:pkUser/:status', [verifyToken, verifyWebmasterRole], (
 
 // apis para configuración del perfil de los usuarios app móvil
 
-UserRouter.get('/User/Profile/App', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+UserRouter.get('/Client/Profile/App', [verifyToken, verifyClientRole ], (req: any, res: Response) => {
     
     let pkUserToken = req.userData.pkUser || 0;
     let sql = `CALL cu_sp_getProfileClient(${ pkUserToken });`;
 
     MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) { 
-            return res.status(401).json({
+            return res.status(400).json({
                 ok: false,
                 error
             });
@@ -390,15 +390,15 @@ UserRouter.post('/Driver/Profile/Update/App', [verifyToken, verifyDriverRole], (
     sql += `'${ body.email }', `;
     sql += `'${ body.sex }', `;
     sql += `'${ body.brithDate }', `;
+    sql += `'${ body.aboutMe }', `;
     sql += `'${ body.dateLicenseExpiration }', `;
     sql += `${ body.isEmployee }, `;
-    sql += `'${ body.aboutMe }', `;
     sql += `'${ reqIp.getClientIp( req ) }' `;
-    sql += `);`;
+    sql += `);`; 
 
     MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) { 
-            return res.status(401).json({
+            return res.status(400).json({
                 ok: false,
                 error
             });

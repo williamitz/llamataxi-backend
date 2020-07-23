@@ -47,7 +47,7 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
         
         let token = '';
         if (data[0].showError === 0) {
-            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
         }
 
         res.json({
@@ -94,7 +94,7 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
         
         let token = '';
         if (data[0].showError === 0) {
-            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
         }
 
         res.json({
@@ -134,7 +134,7 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
             delete data[0].userPassword;
             delete data[0].showError;
 
-            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
         }
 
         res.json({
@@ -176,7 +176,7 @@ AuthRoutes.post('/Login/Driver', (req: Request, res: Response) => {
             delete data[0].userPassword;
             delete data[0].showError;
 
-            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
         }
 
         res.json({
@@ -219,7 +219,7 @@ AuthRoutes.post('/Login/Web', (req: Request, res: Response) => {
             delete data[0].userPassword;
             delete data[0].showError;
 
-            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '1d' } );
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
         }
 
         res.json({

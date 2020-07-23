@@ -443,10 +443,11 @@ TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req:
         if (data[0].showError === 0) {
             // obtener el padre de la ubicación dada en un radio mas grande
             const indexParent = h3.h3ToParent( body.indexHex , 2);
-    
+            
             // extraer los indices hijos de un pentágono con radio 6 del indice padre
             const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
             const msg = `${ nameUser }, ha cancelado el servicio.`;
+            Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
             indexChildren.forEach( indexHex => {
                 Server.io.in( indexHex ).emit( 'client-cancel-service', { pkService, msg } );
             });
@@ -460,6 +461,105 @@ TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req:
 
     }); 
 
+});
+
+TServiceRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+    let fkUser = req.userData.pkUser || 0;
+    let body = req.body;
+
+    let sql = `CALL ts_sp_declineOfferDriver(`;
+    sql += `${ body.pkOffer }, `;
+    sql += `${ body.pkService }, `;
+    sql += `${ fkUser }, `;
+    sql += `0`;
+    sql += `);`
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    }); 
+});
+
+TServiceRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+    // let fkUser = req.userData.pkUser || 0;
+    let body = req.body;
+
+    let sql = `CALL ts_sp_declineOfferDriver(`;
+    sql += `${ body.pkOffer }, `;
+    sql += `${ body.pkService }, `;
+    sql += `${ body.pkDriver }, `;
+    sql += `1`;
+    sql += `);`
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    }); 
+});
+
+TServiceRouter.put('/Service/Calification/:id', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+    
+    let body = req.body;
+    let fkUser = req.userData.pkUser || 0;
+    let pkService = req.params.id || 0;
+    /**
+     IN `InFkservice` bigint,
+    IN `InIsClient` tinyint,
+    IN `InCalification` tinyint,
+    IN `InObservation` varchar(255),
+    IN `InFkUser` int,
+    IN `InIp` varchar(20)
+     */
+
+    let sql = `CALL ts_sp_addCalification(`;
+    sql += `${ pkService }, `;
+    sql += `${ body.isClient }, `;
+    sql += `${ body.calification }, `;
+    sql += `'${ body.observation }', `;
+    sql += `${ fkUser },`;
+    sql += `'${ reqIp.getClientIp( req ) }'`;
+    sql += `);`
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    }); 
 });
 
 
