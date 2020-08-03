@@ -8,6 +8,7 @@ import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
 import { IOffer } from '../interfaces/offer.interface';
+import { IWatchGeo } from '../interfaces/payload-service.interface';
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
@@ -16,9 +17,6 @@ export const connectUser = ( client: Socket ) => {
 
     listUser.onAddUser( client.id );
     console.log('usuario conectado', client.id);
-    // console.log('clientes configurados', listUser.onGetUsers());
-    // client.on('connection', (payload: any, callback: Function) => {
-    // });
 }
 
 export const singUser = ( client: Socket, io: SocketIO.Server ) => {
@@ -34,10 +32,10 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
                                         payload.codeCategory || ''
                                         );
         if (!ok) {            
-            callback({
+            return callback({
                 ok: false, 
                 error:{ 
-                    message: 'Ya existe un usuario configurado :(' 
+                    message: 'No se encontró usuario socket :(' 
                 }
             });
         }
@@ -110,6 +108,31 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
                 ok: false, 
                 error: e
             });
+            console.error('Error al procesar sql', e);
+        });
+    });
+};
+
+export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('disconnect', (payload, callback: Function) => {
+        const userDelete = listUser.onDeleteUser( client.id );
+
+        client.leave( userDelete.device, (err: any) => {
+            if (err) {
+                console.error('Ocurrio un error al eliminar usuario de la sala');
+            }
+        });
+        io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
+        onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
+            
+            // callback( {ok: true, data: resSql} );
+            console.log('Se desconecto un usuario', resSql);
+            
+        }).catch( e => {
+            // callback({
+            //     ok: false,
+            //     error: e
+            // });
             console.error('Error al procesar sql', e);
         });
     });
@@ -289,30 +312,6 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
     });
 }
 
-export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('disconnect', (payload, callback: Function) => {
-        const userDelete = listUser.onDeleteUser( client.id );
-        client.leave( userDelete.device, (err: any) => {
-            if (err) {
-                console.error('Ocurrio un error al eliminar usuario de la sala');
-            }
-        });
-        io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
-        onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
-            
-            // callback( {ok: true, data: resSql} );
-            console.log('Se desconecto un usuario', resSql);
-            
-        }).catch( e => {
-            // callback({
-            //     ok: false,
-            //     error: e
-            // });
-            console.error('Error al procesar sql', e);
-        });
-    });
-};
-
 export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
 
     client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
@@ -430,7 +429,7 @@ export const changeOccupiedDriver = ( client: Socket ) => {
 };
 
 export const currentPositionService = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('current-position-driver-service', ( payload: any, callback: Function ) => {
+    client.on('current-position-driver-service', ( payload: IWatchGeo, callback: Function ) => {
         const clientSocket = listUser.onFindUserForPk( payload.pkClient );
 
         if (clientSocket.pkUser === 0) {

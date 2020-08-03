@@ -5,9 +5,9 @@ import MainRouter from './routes/main.route';
 import MainServer from './classes/mainServer.class';
 import MysqlClass from './classes/mysqlConnect.class';
 const server = MainServer.instance;
-import  Cryptr from 'cryptr';
+import  bcrypt from 'bcrypt';
 // import h3 from 'h3-js';
-const cryptr = new Cryptr(ENCRYPT_KEY);
+// const cryptr = new Cryptr(ENCRYPT_KEY);
 
 // parse application/x-www-form-urlencoded
 server.app.use( bodyParser.urlencoded({ extended: false }) );
@@ -28,3 +28,5 @@ server.onRun( (error: any) => {
     MysqlClass.instance;
     
 });
+
+// console.log('clave', bcrypt.hashSync('1234valchi', 10));

@@ -46,7 +46,10 @@ export class ListUserSockets {
             };
         }
 
-        this.listUser = this.listUser.filter( user => user.id !== id );
+        if (finded.pkUser === 0) {
+            this.listUser = this.listUser.filter( user => user.id !== id );
+        }
+
         return finded;
     }
 
@@ -56,6 +59,15 @@ export class ListUserSockets {
         if (!finded) {
             console.error('No se encontró usuario socket');
             return false;
+        }
+        
+        const userRepit = this.listUser.filter( (user) => user.pkUser === pkUser && user.id !== id );
+
+        if (userRepit.length > 0) {
+
+            userRepit.forEach( (item) => {
+                this.listUser = this.listUser.filter( us => us.id !== item.id );
+            });
         }
         
         finded.pkUser = pkUser,

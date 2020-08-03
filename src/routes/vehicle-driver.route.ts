@@ -203,6 +203,93 @@ VehicleRouter.post('/Vehicle/Add/App', [verifyToken, verifyDriverRole], (req: an
 
 });
 
+VehicleRouter.put('/Vehicle/Update/App/:id', [verifyToken, verifyDriverRole], (req: any, res: Response ) =>{
+    
+  // ts_sp_updateVehicle
+  /*
+  IN `InPkVehicle` INT, 
+  IN `InPkDriver` INT, 
+  IN `InFkPerson` INT, 
+  IN `InIsProper` TINYINT, 
+  IN `InNumberPlate` VARCHAR(15), 
+  IN `InYear` INT, 
+  IN `InColor` VARCHAR(20), 
+  IN `InDateSoatExpiration` VARCHAR(20), 
+  IN `InPkUser` INT, 
+  IN `InIpUser` VARCHAR(20) 
+  */
+  let pkVehicle = req.params.id || 0;
+  let body: IBodyVehicleApp = req.body;
+
+  let pkUserToken = req.userData.pkUser || 0;
+  let pkDriverToken = req.userData.pkDriver || 0;
+  let pkPersonToken = req.userData.pkPerson || 0;
+
+ let sql = `CALL ts_sp_updateVehicle(`;
+  sql += `${ pkVehicle }, `;
+  sql += `${ pkDriverToken }, `;
+  sql += `${ pkPersonToken }, `;
+  sql += `${ body.isProper }, `;
+  sql += `'${ body.numberPlate.toUpperCase() }', `;
+  sql += `${ body.year }, `;
+  sql += `'${ body.color }', `;
+  sql += `'${ body.dateSoatExpiration }', `;
+  sql += `${ pkUserToken }, `;
+  sql += `'${ reqIp.getClientIp(req) }' );`;
+
+  MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+
+    res.json({
+      ok: true,
+      showError: data[0].showError,
+      data: data[0]
+    });
+
+  });
+
+});
+
+VehicleRouter.delete('/Vehicle/Del/App/:id', [verifyToken, verifyDriverRole], (req: any, res: Response ) => {
+  
+  let pkVehicle = req.params.id || 0;
+  let pkUserToken = req.userData.pkUser || 0;
+  let pkDriverToken = req.userData.pkDriver || 0;
+  let pkPersonToken = req.userData.pkPerson || 0;
+
+  let sql = `CALL ts_sp_deleteVehicle(`;
+  sql += `${ pkVehicle }, `;
+  sql += `${ pkDriverToken }, `;
+  sql += `${ pkPersonToken }, `;
+  sql += `${ pkUserToken }, `;
+  sql += `'${ reqIp.getClientIp( req ) }' `;
+  sql += `);`;
+
+  MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+    if (error) {
+      return res.status(400).json({
+        ok: false,
+        error,
+      });
+    }
+
+    res.json({
+      ok: true,
+      showError: data[0].showError,
+      data: data[0]
+    });
+
+  });
+
+});
+
 VehicleRouter.put('/Using/Vehicle/:pkVehicle', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
 
   let pkVehicle = req.params.pkVehicle || 0;

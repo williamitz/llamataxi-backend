@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { verifyToken, verifyWebmasterRole, verifyClientRole, verifyDriverRole } from '../middlewares/token.mdd';
-import { IBodyUser, IUserProfile } from '../interfaces/body_user.interface';
+import { IBodyUser, IUserProfile, IPassword } from '../interfaces/body_user.interface';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
 import bcrypt from 'bcrypt';
@@ -411,6 +411,63 @@ UserRouter.post('/Driver/Profile/Update/App', [verifyToken, verifyDriverRole], (
         });
     });
     
+});
+
+UserRouter.post( '/User/ChangePass', [verifyToken], (req: any, res: Response) => {
+    
+    let pkUserToken = req.userData.pkUser || 0;
+    let pkPersonToken = req.userData.pkPerson || 0;
+    let body: IPassword = req.body;
+
+    let sql = `CALL as_sp_getPasswordUser(${ pkUserToken });`;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) { 
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        let passDatabase = data[0].password || 'xD';
+
+        if (!bcrypt.compareSync( body.passwordOld, passDatabase )) {
+            return res.json({
+                ok: true,
+                showError: 8
+            });
+        }
+        /*
+        IN `InPkUser` int,
+        IN `InPkPerson` int,
+        IN `InPassword` varchar(200),
+        IN `InIp` varchar(20) */
+
+        let sqlChange = `CALL as_sp_changePassword(`;
+        sqlChange += `${ pkUserToken }, `;
+        sqlChange += `${ pkPersonToken }, `;
+        sqlChange += `'${ bcrypt.hashSync( body.password, 10 ) }', `;
+        sqlChange += `'${ reqIp.getClientIp( req ) }'`;
+        sqlChange += `);`;
+
+        MysqlCnn.onExecuteQuery( sqlChange, (errorChnage: any, dataChange: any[]) => {
+
+            if (errorChnage) { 
+                return res.status(400).json({
+                    ok: false,
+                    error: errorChnage
+                });
+            }
+
+            res.json({
+                ok: true,
+                showError: dataChange[0].showError,
+                data: dataChange[0]
+            });
+
+        });
+
+    });
 });
 
 //cu_sp_updateProfileClient

@@ -40,3 +40,9 @@ export interface IUserProfile {
     fkTypeDocument: number;
     document: string;
 }
+
+export interface IPassword {
+    passwordOld: string;
+    password: string;
+    passRepit: string;
+}
