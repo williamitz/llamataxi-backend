@@ -56,6 +56,7 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
     let qEmail = req.query.qEmail || '';
     let qUser = req.query.qUser || '';
     let qRole = req.query.qRole || '';
+    let qVerified = req.query.qVerified || 2;
     let showInactive = req.query.showInactive.toString() || 'true';
 
     let statusValid = ['true', 'false'];
@@ -68,7 +69,14 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
         });
     }
 
-    let sql = `CALL as_sp_getListUser(${ InPage }, ${ rowsForPage }, '${ qName }', '${ qEmail }', '${ qUser }', '${ qRole }', ${ showInactive });`;
+    let sql = `CALL as_sp_getListUser(${ InPage }, `;
+    sql += `${ rowsForPage }, `;
+    sql += `'${ qName }', `;
+    sql += `'${ qEmail }', `;
+    sql += `'${ qUser }', `;
+    sql += `'${ qRole }', `;
+    sql += `${ qVerified }, `;
+    sql += `${ showInactive });`;
 
     MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
         if (error) {
@@ -78,7 +86,12 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
             });
         }
         
-        let sqlOverall = `CALL as_sp_overallPageUser('${ qName }', '${ qEmail }', '${ qUser }', '${ qRole }', ${ showInactive });`;
+        let sqlOverall = `CALL as_sp_overallPageUser('${ qName }', `;
+        sqlOverall += `'${ qEmail }', `;
+        sqlOverall += `'${ qUser }', `;
+        sqlOverall += `'${ qRole }', `;
+        sqlOverall += `${ qVerified }, `;
+        sqlOverall += `${ showInactive });`;
 
         MysqlCnn.onExecuteQuery( sqlOverall, (errorOverall: any, dataOverall: any[]) => {
             if (errorOverall) {
@@ -126,6 +139,7 @@ UserRouter.post('/User/Add', [verifyToken, verifyWebmasterRole], (req: any, res:
     sql += `'${ passEncrypt }', `;
     sql += `'${ body.role }', `;
     sql += `${ body.google }, `;
+    sql += `${ body.verifyReniec }, `;
 
     sql += `'${ body.dateLicenseExpiration }', `;
     sql += `${ body.isEmployee }, `;

@@ -28,6 +28,7 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
     sql += `'${ passEncrypt }', `;
     sql += `'CLIENT_ROLE', `;
     sql += `${ body.google }, `;
+    sql += `${ body.verifyReniec }, `;
     
     //  estos datos solo se toman en cuenta cuando es u conductor
     sql += `'', `; // fecha exp soat

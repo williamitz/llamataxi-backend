@@ -7,7 +7,7 @@ let ModelRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-ModelRouter.get("/Model/Get", (req: Request, res: Response) => {
+ModelRouter.get("/Model/Get", [verifyToken], (req: Request, res: Response) => {
   let page = req.query.page || 1;
   let fkCategory = req.query.fkCategory || 0;
   let fkBrand = req.query.fkBrand || 0;
@@ -46,7 +46,7 @@ ModelRouter.get("/Model/Get", (req: Request, res: Response) => {
   });
 });
 
-ModelRouter.get("/Model/GetAll", (req: Request, res: Response) => {
+ModelRouter.get("/Model/GetAll", [verifyToken], (req: Request, res: Response) => {
   let fkCategory = req.query.fkCategory || 0;
   let fkBrand = req.query.fkBrand || 0;
 
@@ -65,11 +65,15 @@ ModelRouter.get("/Model/GetAll", (req: Request, res: Response) => {
   });
 });
 
-ModelRouter.post("/Model/Add", (req: any, res: Response) => {
+ModelRouter.post("/Model/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyModel = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_addModel( ${body.fkCategory}, ${body.fkBrand}, '${body.nameModel}', ${pkUserToken} , '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL as_sp_addModel( ${body.fkCategory}, `;
+  sql += `${body.fkBrand}, `;
+  sql += `'${body.nameModel}', `;
+  sql += `${pkUserToken} , `;
+  sql += `'${reqIp.getClientIp(req)}' );`;  
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
@@ -89,18 +93,19 @@ ModelRouter.post("/Model/Add", (req: any, res: Response) => {
   });
 });
 
-ModelRouter.put("/Model/Update/:id", (req: any, res: Response) => {
+ModelRouter.put("/Model/Update/:id", [verifyToken], (req: any, res: Response) => {
   let body: IBodyModel = req.body;
 
   let pkParam = req.params.id || 0;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_updateModel( ${pkParam}, 
-    ${body.fkCategory || ""},
-    ${body.fkBrand || ""},
-    '${body.nameModel || ""}',  
-    ${pkUserToken} ,  
-    '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL as_sp_updateModel( ${pkParam}, `;
+
+    sql += `${body.fkCategory}, `;
+    sql += `${body.fkBrand},`;
+    sql += `'${body.nameModel}', `;
+    sql += `${pkUserToken} , `;
+    sql += `'${reqIp.getClientIp(req)}' );`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
