@@ -90,7 +90,8 @@ TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, 
 
     sql += `${ body.rateHistory }, `;
     sql += `${ body.rateService }, `;
-    sql += `${ body.minRatePrc }, `;
+    sql += `${ body.minRate }, `;
+    sql += `${ body.minRatePercent }, `;
     sql += `${ body.isMinRate }, `;
     
     sql += `'${ body.paymentType }', `;
