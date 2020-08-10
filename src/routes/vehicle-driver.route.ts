@@ -327,6 +327,7 @@ VehicleRouter.get('/Usin/Get/Vehicle', [verifyToken, verifyDriverRole], (req: an
 
   let sql = `CALL ts_sp_getUsingDriver( ${ pkDriverToken } );`;
 
+
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({

@@ -193,7 +193,7 @@ export class ListUserSockets {
 
     onFindDriversHex( hex: string ): UserSocket[] {
         // && user.category === category 
-        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false );
+        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false && user.pkUser !== 0 );
     }
 
     onUpdateTime( id: string ) {

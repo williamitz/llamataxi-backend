@@ -110,13 +110,13 @@ TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, 
         }
 
         // enviar notificación a conductores cercanos
-        const drivers: UserSocket[] =  Users.onGetDriverHex(indexHex);
+        // const drivers: UserSocket[] =  Users.onGetDriverHex(indexHex);
 
-        if (drivers.length > 0) {
-            drivers.forEach( driver => {
-                Server.io.to( driver.id ).emit('new-service', {data: data[0]});
-            });
-        }
+        // if (drivers.length > 0) {
+        //     drivers.forEach( driver => {
+        //         Server.io.to( driver.id ).emit('new-service', {data: data[0]});
+        //     });
+        // }
 
         res.json({
             ok: true,

@@ -8,7 +8,7 @@ import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
 import { IOffer } from '../interfaces/offer.interface';
-import { IWatchGeo } from '../interfaces/payload-service.interface';
+import { IWatchGeo, IPayloadServiceNew } from '../interfaces/payload-service.interface';
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
@@ -142,17 +142,10 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
 // cuando se registra un nuevo servicio de taxi
 export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
 
-    client.on('new-service', ( payload: any, callback: Function ) => {
-        /** payload
-         * codeCategory: this.bodyService.codeCategory,
-            coords: {
-                    lat: this.bodyService.coordsOrigin.lat,
-                    lng: this.bodyService.coordsOrigin.lng
-            }
-         */
+    client.on('new-service', ( payload: IPayloadServiceNew, callback: Function ) => {
+
         const indexHex = h3.geoToH3( payload.coords.lat, payload.coords.lng, radiusPentagon );
         const drivers = listUser.onFindDriversHex( indexHex );
-        // codeCategory
 
         // obtener el padre de la ubicación dada en un radio mas grande
         const indexParent = h3.h3ToParent( indexHex , 2);
@@ -191,9 +184,12 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             // notificar a los conductores que estén dentro 
 
             indexChildren.forEach( indexhex => {
-
                 // io.to( 'DRIVER_ROLE' ).emit( 'new-service', {} );
                 io.in( indexhex ).emit( 'new-service', { data: payload.data } );
+            });
+
+            drivers.forEach( driver => {
+                io.in( driver.id ).emit( 'new-service', { data: payload.data } );
             });
 
             response = {
@@ -209,10 +205,7 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 drivers.push(...listUser.onFindDriversHex( indexHex ) );
             });
 
-            drivers.forEach( driver => {
-
-                io.in( driver.id ).emit( 'new-service', { data: payload.data } );
-            });
+            
             
             response = {
                 ok: false,

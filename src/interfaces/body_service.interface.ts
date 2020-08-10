@@ -1,6 +1,7 @@
 export interface IBodyService {
     pkService: number;
     fkClient: number;
+    fkDriver: number;
     fkJournal: number;
     fkRate: number;
     fkCategory: number;
@@ -31,14 +32,14 @@ export interface IBodyService {
     img: string;
     nameComplete: string;
     // otros
-    created: any;
+    dateOfferClient: any;
     osId: string;
     aliasCategory: string;
     changeRate: boolean;
     pkOfferService: number;
 }
 
-interface ICoords {
+export interface ICoords {
     lat: number;
     lng: number;
 }
