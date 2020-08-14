@@ -20,6 +20,7 @@ import RateRouter from './rate.route';
 import TServiceRouter from './taxi-service.route';
 import osRouter from "./oneSignal.route";
 import UtilRoutes from './utilities.route';
+import ChartsRouter from "./charts.rotes";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -45,5 +46,6 @@ MainRouter.use(RateRouter);
 MainRouter.use(osRouter);
 
 MainRouter.use( UtilRoutes );
+MainRouter.use( ChartsRouter );
 
 export default MainRouter;

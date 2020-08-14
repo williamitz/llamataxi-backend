@@ -3,9 +3,11 @@ import { verifyToken, verifyWebmasterRole } from '../middlewares/token.mdd';
 import MysqlClass from '../classes/mysqlConnect.class';
 import reqIp from 'request-ip';
 import { IBodyUser } from '../interfaces/body_user.interface';
+import MainServer from '../classes/mainServer.class';
 
 let DriverRoutes = Router();
 
+let Server = MainServer.instance;
 let MysqlCnn = MysqlClass.instance;
 
 DriverRoutes.put('/Driver/Profile/:id', [verifyToken, verifyWebmasterRole], (req: Request, res: Response) => {
@@ -101,6 +103,11 @@ DriverRoutes.put( '/Driver/verify/:driver', [verifyToken, verifyWebmasterRole], 
                 ok: false,
                 error
             });
+        }
+
+        if (data[0].showError === 0) {
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            Server.io.in( 'WEB' ).emit( 'current-new-verfified', {pkservice: data[0].pkService} )
         }
 
         res.json({

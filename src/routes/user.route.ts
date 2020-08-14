@@ -57,6 +57,7 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
     let qUser = req.query.qUser || '';
     let qRole = req.query.qRole || '';
     let qVerified = req.query.qVerified || 2;
+    let qConnect = req.query.qConnect || 2;
     let showInactive = req.query.showInactive.toString() || 'true';
 
     let statusValid = ['true', 'false'];
@@ -76,6 +77,7 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
     sql += `'${ qUser }', `;
     sql += `'${ qRole }', `;
     sql += `${ qVerified }, `;
+    sql += `${ qConnect }, `;
     sql += `${ showInactive });`;
 
     MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
@@ -91,6 +93,7 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
         sqlOverall += `'${ qUser }', `;
         sqlOverall += `'${ qRole }', `;
         sqlOverall += `${ qVerified }, `;
+        sqlOverall += `${ qConnect }, `;
         sqlOverall += `${ showInactive });`;
 
         MysqlCnn.onExecuteQuery( sqlOverall, (errorOverall: any, dataOverall: any[]) => {

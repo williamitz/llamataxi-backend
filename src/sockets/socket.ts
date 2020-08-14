@@ -77,9 +77,11 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
     client.on('logout-user', (payload: any, callback: Function) => {
 
         const userLogout = listUser.onFindUser( client.id );
+        // console.log('usuario logout', userLogout.pkUser);
+        const pkUserLogout = userLogout.pkUser;
         const ok = listUser.onLogoutUser( client.id );
         if (!ok) {
-            callback({
+            return callback({
                 ok: false, 
                 error:{ 
                     message: 'No se encontró usuario para desconexión :(' 
@@ -93,9 +95,9 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
             } 
         });
         
-        io.to('WEB').emit('user-disconnect', { pkUser: userLogout.pkUser });
+        io.to('WEB').emit('user-disconnect', { pkUser: pkUserLogout });
         console.log('clientes configurados', listUser.onGetUsers());
-        onSingSocketDB(userLogout.pkUser, userLogout.osID, false).then( (resSql) => {
+        onSingSocketDB(pkUserLogout, '', false).then( (resSql) => {
 
             callback({
                 ok: true, 
@@ -122,33 +124,35 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
                 console.error('Ocurrio un error al eliminar usuario de la sala');
             }
         });
-        io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
-        onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
+        // io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
+        // onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
             
-            // callback( {ok: true, data: resSql} );
-            console.log('Se desconecto un usuario', resSql);
+        //     console.log('Se desconecto un usuario', resSql);
             
-        }).catch( e => {
-            // callback({
-            //     ok: false,
-            //     error: e
-            // });
-            console.error('Error al procesar sql', e);
-        });
+        // }).catch( e => {
+
+        //     console.error('Error al procesar sql', e);
+        // });
     });
 };
 
 // notificando a conductores de acuerdo a su categoría 
 // cuando se registra un nuevo servicio de taxi
-export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number, radiusPather: number ) => {
 
     client.on('new-service', ( payload: IPayloadServiceNew, callback: Function ) => {
 
-        const indexHex = h3.geoToH3( payload.coords.lat, payload.coords.lng, radiusPentagon );
-        const drivers = listUser.onFindDriversHex( indexHex );
+        const indexHexService = h3.geoToH3( payload.coords.lat, payload.coords.lng, radiusPentagon );
+
+        // extraemos las coordenadas de los vértices del polígono
+        const polygon = h3.h3ToGeoBoundary( indexHexService, false );
+        // extraemos las coordenadas del centro del polígono
+        const center = h3.h3ToGeo( indexHexService );
+
+        const drivers = listUser.onFindDriversHex( indexHexService );
 
         // obtener el padre de la ubicación dada en un radio mas grande
-        const indexParent = h3.h3ToParent( indexHex , 2);
+        const indexParent = h3.h3ToParent( indexHexService , radiusPather);
 
         // extraer los indices hijos de un pentágono con radio 6 del indice padre
         const indexChildren: string[] = h3.h3ToChildren( indexParent , radiusPentagon);
@@ -160,6 +164,14 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             total: 0,
             error: {}
         };
+
+        let payloadEmit = {
+            data: payload.data,
+            polygon,
+            center,
+            indexHex: indexHexService,
+            totalDrivers: drivers.length
+        };
         
         if (drivers.length > 0 ) {
 
@@ -167,31 +179,57 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
 
             switch (payload.codeCategory) {
                 case 'BASIC':
+
+                    // io.in( indexHexService ).emit( 'new-service', payloadEmit );
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                    });
+
                     driverNotify = drivers;
+
                     break;
-                    case 'STANDAR':
-                        driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
-                        break;
-                        case 'PREMIUM':
-                            driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
-                            break;
+                case 'STANDAR':
+                    
+                    // io.in( `${indexHexService}-STANDAR` ).emit( 'new-service', payloadEmit );
+                    // io.in( `${indexHexService}-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
+                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    });
+                    
+                    driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
+                    
+                    break;
+                case 'PREMIUM':
+                    
+                    // io.in( `${indexHexService}-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    });
+                    driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
+
+                    break;
             
                 default:
+                    // notificamos a todos los conductores en el pentagono
+                    // donde se realizó el servicio
+                    io.in( indexHexService ).emit( 'new-service', payloadEmit );
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                    });
                     driverNotify = drivers;
+
                     break;
             }
-
-            // notificar a los conductores que estén dentro 
-
-            indexChildren.forEach( indexhex => {
-                // io.to( 'DRIVER_ROLE' ).emit( 'new-service', {} );
-                io.in( indexhex ).emit( 'new-service', { data: payload.data } );
-            });
-
-            drivers.forEach( driver => {
-                io.in( driver.id ).emit( 'new-service', { data: payload.data } );
-            });
-
+            
             response = {
                 ok: true,
                 data: driverNotify,
@@ -199,18 +237,65 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 error: {}
             };
         } else {
+            let driverNotify:UserSocket[] = [];
             // console.log('hijos cercanos ', indexChildren);
-            indexChildren.forEach( indexHex => {
-                io.in( indexHex ).emit( 'new-service', { data: payload.data } );
-                drivers.push(...listUser.onFindDriversHex( indexHex ) );
-            });
+            // indexChildren.forEach( indexHexChildren => {
+            //     // io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+            //     driverNotify.push(...listUser.onFindDriversHex( indexHexChildren ) );
+            // });
 
+            switch (payload.codeCategory) {
+                case 'BASIC':
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                    });
+
+                    driverNotify = drivers;
+
+                    break;
+                case 'STANDAR':
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
+                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    });
+                    
+                    driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
+                    
+                    break;
+                case 'PREMIUM':
+                                        
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    });
+                    driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
+
+                    break;
             
+                default:
+                    
+                    // notificamos a todos los conductores en los pentagonos hijos
+                    indexChildren.forEach( indexHexChildren => {
+                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                    });
+
+                    driverNotify = drivers;
+
+                    break;
+            }
+
+            // driverNotify.forEach( driver => {
+            //     io.in( driver.id ).emit( 'new-service', payloadEmit );
+            // });
             
             response = {
-                ok: false,
-                data: [],
-                total: 0,
+                ok: driverNotify.length > 0 ? true : false,
+                data: driverNotify,
+                total: driverNotify.length,
                 error: {
                     message: 'No se encontraron conductores para notificar'
                 }
@@ -231,6 +316,9 @@ export const configCategoryUser = ( client: Socket ) => {
         if (user.pkUser === 0) {
             return callback({ok: false, message: 'Usuario no encontrado'});
         }
+
+        user.pkCategory = payload.pkCategory;
+        user.category = payload.codeCategory;
         
         // sacar a los conductores de su sala anterior
         if (user.category != '') {
@@ -246,10 +334,9 @@ export const configCategoryUser = ( client: Socket ) => {
                 }
             });
         }
-        user.pkCategory = payload.pkCategory;
-        user.category = payload.codeCategory;
+        
         // console.log('categoria cambiada', payload); 
-        // console.log('categoria cambiada', user);
+        console.log('categoria cambiada', user);
         // user.onUpdateCategory( payload.pkCategory , payload.codeCategory );
         client.join( payload.codeCategory , (error: any) => {
             if (error) {
@@ -309,41 +396,64 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
 
     client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
         const user = listUser.onFindUser( client.id );
+        const oldIndex = user.indexHex;
+        const oldCategory = user.category;
         const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
-
+        const roomIndex = indexHex;
+        const roomIndexCategory = `${ roomIndex }-${ user.category }`;
+        const oldRoomIndexCategory = `${ oldIndex }-${ oldCategory }`
         // agregar al usuario a la sala con el indice del pentágono en el que se encuentra
+        // user.indexHex = indexHex;
 
-        if (user.indexHex !== '') {
-            client.leave( user.indexHex, (err: any) => {
+        if (oldIndex !== '' && oldIndex !== roomIndex) {
+            client.leave( oldIndex, (err: any) => {
                 if (err) {
-                    console.error(`Error al expulsar a ${ user.userName } de la sala ${ user.indexHex }`);
+                    console.error(`Error al expulsar a ${ user.userName } de la sala ${ roomIndex }`);
+                }
+            });
+            if (oldCategory !== '' && oldRoomIndexCategory !== roomIndexCategory) {
+                
+                client.leave( oldRoomIndexCategory, (err: any) => {
+                    if (err) {
+                        console.error(`Error al expulsar a ${ user.userName } de la sala ${ oldRoomIndexCategory }`);
+                    }
+                });
+            }
+
+        }
+
+        if (oldIndex !== roomIndex) {
+            client.join( roomIndex, (err: any) => {
+                if (err) {
+                    console.error(`Error al agregar a ${ user.userName } en la sala ${ roomIndex }`);
                 }
             });
         }
-
-        user.indexHex = indexHex;
-
-        client.join( indexHex, (err: any) => {
-            if (err) {
-                console.error(`Error al agregar a ${ user.userName } en la sala ${ indexHex }`);
-            }
-        });
         
-        onUpdateCoords( user.pkUser, payload.lat, payload.lng, indexHex ).then( () => {
+        if (oldRoomIndexCategory !== roomIndexCategory) {
+            client.leave( roomIndexCategory, (err: any) => {
+                if (err) {
+                    console.error(`Error al agregar a ${ user.userName } en la sala ${ roomIndexCategory }`);
+                }
+            });
+        }
+        
+        onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( () => {
             
             // notificar a clients cercanos a la ubicación, y al panel web
             callback({
                 ok: true,
-                message: 'Se actualizo coordenadas, pendiente notificar'
+                message: `Se actualizo coordenadas, pendiente notificar ${ roomIndex } - ${ roomIndexCategory }`,
+                indexHex: roomIndex
             });
 
         }).catch(e => {
             console.error('Error al actualizar coordenadas', e);
-            // callback({
-            //     ok: false,
-            //     message: 'Ocurrio un error!',
-            //     error: e
-            // });
+            callback({
+                ok: false,
+                error: e,
+                message: `Error al actualizar coordenadas`
+            });
         });
     });
 
@@ -369,14 +479,12 @@ export const newOfferDriver = ( client: Socket, io: SocketIO.Server ) => {
 // escuchamos cuando el cliente hace una contraoferta o acepta e inicia la carrera
 export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
     client.on('newOffer-client', (payload: any, callback: Function) => {
-        // pkDriver, pkService, accepted
+        /* // payload
+            { dataOffer: offer, accepted }
+        */
         const dataOffer: IOffer = payload.dataOffer;
         const userDriver = listUser.onFindUserForPk( Number( dataOffer.fkDriver ) );
-        const userClient = listUser.onFindUser( client.id );
-        // dataOffer.nameComplete = userClient.nameComplete;
-        // dataOffer.osId = userClient.osID;
 
-        // console.log('emitiendo a conductor socket', userDriver.id);
         if (userDriver.pkUser !== 0) {
             io.in( userDriver.id ).emit('newOffer-service-client', { dataOffer, accepted: payload.accepted } );
             return callback({ok: true, message: 'Sen emitió a conductor socket'})
@@ -479,6 +587,7 @@ function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<I
     
     return new Promise( (resolve, reject)  => {
         let sql = `CALL as_sp_singSocket(${ pkUser }, '${ osId }', ${ status });`;
+        // console.log('sing sql', sql);
     
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
             if (error) {                
@@ -585,9 +694,9 @@ function onUpdateCoords( pkUser: number, lat: number, lng: number, indexHex: str
         let sql = `CALL ts_sp_updateUserCoords( ${ pkUser }, '${ indexHex }', ${ lat }, ${ lng } );`;
 
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
-            
+            // console.log('data coord update', data);
             if (error) {
-                return reject({ok: false, error});
+                reject({ok: false, error});
             }
             
             let dataString = JSON.stringify(data);
@@ -607,7 +716,7 @@ function onUpdateCategoryUser( pkUser: number, pkCategory: number ): Promise<IRe
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
             
             if (error) {
-                return reject({ok: false, error});
+                reject({ok: false, error});
             }
             
             let dataString = JSON.stringify(data);

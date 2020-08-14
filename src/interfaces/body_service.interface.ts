@@ -51,4 +51,5 @@ export interface IBodyOffer {
     isClient: boolean;
     fkDriver: number;
     fkVehicle: number;
+    indexHex: string;
 }

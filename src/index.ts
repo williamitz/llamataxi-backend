@@ -29,4 +29,4 @@ server.onRun( (error: any) => {
     
 });
 
-// console.log('clave', bcrypt.hashSync('1234valchi', 10));
+// console.log('clave', bcrypt.hashSync('Gamaniel1', 10));

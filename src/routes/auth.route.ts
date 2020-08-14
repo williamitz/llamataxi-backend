@@ -5,8 +5,9 @@ import jwt from 'jsonwebtoken';
 import { IBodyUser } from '../interfaces/body_user.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { SEED_KEY } from '../global/environments.global';
+import MainServer from '../classes/mainServer.class';
 
-
+const MainSvr = MainServer.instance;
 const Mysql = MysqlClass.instance;
 
 let AuthRoutes = Router();
@@ -49,6 +50,9 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
         let token = '';
         if (data[0].showError === 0) {
             token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
+
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            MainSvr.io.in( 'WEB' ).emit( 'current-new-user', {pkUser: data[0].pkUser} );
         }
 
         res.json({
@@ -96,6 +100,9 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
         let token = '';
         if (data[0].showError === 0) {
             token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
+
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            MainSvr.io.in( 'WEB' ).emit( 'current-new-user', {pkUser: data[0].pkUser} )
         }
 
         res.json({
@@ -131,6 +138,9 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
                     showError: showError + 2,
                 });
             }
+
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            MainSvr.io.in( 'WEB' ).emit( 'current-new-traffic', {pkUser: data[0].pkUser} );
 
             delete data[0].userPassword;
             delete data[0].showError;
@@ -173,6 +183,9 @@ AuthRoutes.post('/Login/Driver', (req: Request, res: Response) => {
                     showError: showError + 2,
                 });
             }
+
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            MainSvr.io.in( 'WEB' ).emit( 'current-new-traffic', {pkUser: data[0].pkUser} );
 
             delete data[0].userPassword;
             delete data[0].showError;

@@ -118,6 +118,11 @@ TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, 
         //     });
         // }
 
+        if (data[0].showError === 0) {
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            Server.io.in( 'WEB' ).emit( 'current-new-service', {pkservice: data[0].pkService} )
+        }
+
         res.json({
             ok: true,
             showError: data[0].showError,
@@ -266,16 +271,11 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
         let json: any[] = JSON.parse(dataString);
 
         if (json.length) {
-
-            /**
-             * indexHex, COUNT(*) AS 'total'
-             */
-
             
             json.forEach( service => {
-                // console.log('es un indice válido', h3.h3IsValid( service.indexHex ));
-                // service.polygon = geojson2h3.h3ToFeature( service.indexHex, {} ).geometry;
+                // extraemos las coordenadas de los vértices del polígono
                 service.polygon = h3.h3ToGeoBoundary( service.indexHex, false );
+                // extraemos las coordenadas del centro del polígono
                 service.center = h3.h3ToGeo( service.indexHex );
             });
 
@@ -371,6 +371,7 @@ TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (
     
     let fkUser = req.userData.pkUser || 0;
     let body: IBodyOffer = req.body;
+    let nameUser = req.userData.nameComplete || '';
 
     let sql = `CALL ts_sp_acceptOfferClient(`;
     sql += `${ body.pkService },`;
@@ -387,6 +388,18 @@ TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (
             return res.status(400).json({
                 ok: false,
                 error
+            });
+        }
+
+        if (data[0].showError === 0) {
+            const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
+            
+            // extraer los indices hijos de un pentágono con radio 6 del indice padre
+            const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
+            const msg = `${ nameUser }, ha aceptado a otro conductor.`;
+            // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+            indexChildren.forEach( indexHex => {
+                Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
             });
         }
 
@@ -425,7 +438,7 @@ TServiceRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (
 TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     
     let fkUser = req.userData.pkUser || 0;
-    let nameUser = req.userData.nameComple || '';
+    let nameUser = req.userData.nameComplete || '';
     let pkService = req.params.id || 0;
 
     let body = req.body;
@@ -443,15 +456,19 @@ TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req:
 
         if (data[0].showError === 0) {
             // obtener el padre de la ubicación dada en un radio mas grande
-            const indexParent = h3.h3ToParent( body.indexHex , 2);
+            const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
             
             // extraer los indices hijos de un pentágono con radio 6 del indice padre
             const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
             const msg = `${ nameUser }, ha cancelado el servicio.`;
-            Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+            // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
             indexChildren.forEach( indexHex => {
-                Server.io.in( indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+                Server.io.in( indexHex ).emit( 'disposal-service', { pkService, msg, indexHex: body.indexHex } );
             });
+
+            // notificar al panel que se eliminó un servicio
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            Server.io.in( 'WEB' ).emit( 'current-del-service', {} );
         }
 
         res.json({
