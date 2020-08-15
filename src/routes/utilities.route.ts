@@ -12,9 +12,6 @@ UtilRoutes.get('/dni', (req: any, res: Response) => {
     // Make a request for a user with a given ID
     axios.get(`https://api.reniec.cloud/dni/${ qDni }`)
       .then( (response: any) => {
-        // handle success
-        // console.log(response.data);
-        // console.log(response);
         res.json({
             ok: true,
             data: response.data || null

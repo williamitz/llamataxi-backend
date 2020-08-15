@@ -17,7 +17,6 @@ let MysqlCon = MysqlClass.instance;
 TServiceRouter.get('/Journal/GetForHour', [verifyToken], (req: Request, res: Response) => {
     
     const data = Server.getJournal();
-    // console.log(data);
     if (data.pkJournal === 0) {
         return res.status(400).json({
             ok: false,
@@ -47,7 +46,6 @@ TServiceRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Res
     }
 
     let sql = `CALL ts_sp_getRateForJournal(${ data.pkJournal });`;
-    // console.log('sql tarifa ', sql);
     MysqlCon.onExecuteQuery(sql, (error: any, dataRate: any[]) => {
 
         if (error) {
@@ -240,11 +238,7 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
     const userSk: UserSocket = Users.onFindUserForPk( fkUser );
 
     // obtener el padre de la ubicación dada en un radio mas grande
-    // const indexParent = h3.h3ToParent( userSk.indexHex , 9);
-    // console.log(`indice padre ${ indexParent }`);
-    // extraer los indices hijos de un pentágono con radio 6 del indice padre
     const indexChildren: string[] = h3.kRing( userSk.indexHex , 1);
-    // console.log(`indice hijos ${ indexChildren }`);
 
     let sql =  `CALL ts_sp_getZonesDemand( ${ fkUser }, `;
     sql += `'${ indexChildren[0] || '' }', `;
@@ -256,7 +250,6 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
     sql += `'${ indexChildren[6] || '' }'`;
     sql += ` );`;
 
-    // console.log(  sql);
 
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
@@ -479,6 +472,48 @@ TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req:
 
     }); 
 
+});
+
+TServiceRouter.put('/Service/DeleteRun/:id/:isClient', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+    let pkService = req.params.id || 0;
+    let isClient = req.params.isClient || null;
+    let fkUser = req.userData.pkUser || 0;
+
+    let validIs = ['true', 'false'];
+
+    if (!validIs.includes( isClient )) {
+        return res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Es cliente inválido'
+            }
+        });
+    }
+
+    let sql = `CALL ts_sp_deleteServiceRun(`;
+    sql += `${ pkService },`;
+    sql += `${ isClient },`;
+    sql += `${ fkUser },`;
+    sql += `'${ reqIp.getClientIp(req) }'`;
+    sql += `);`;
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    });
+    
 });
 
 TServiceRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any, res: Response) => {

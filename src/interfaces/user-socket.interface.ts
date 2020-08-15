@@ -9,6 +9,7 @@ export interface IUserSocket {
     indexHex?: string;
     pkCategory?: number;
     codeCategory?: string;
+    occupied?: boolean;
   }
 
   export interface IUserCoords {

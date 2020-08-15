@@ -134,7 +134,6 @@ MenuRoleRouter.get('/MenuRole/Get/Web', [verifyToken], (req: any, res: Response)
         error,
       });
     }
-
     res.json({
       ok: true,
       data,

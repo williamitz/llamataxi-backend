@@ -8,7 +8,7 @@ import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
 import { IOffer } from '../interfaces/offer.interface';
-import { IWatchGeo, IPayloadServiceNew } from '../interfaces/payload-service.interface';
+import { IWatchGeo, IPayloadServiceNew, IPayloadDel } from '../interfaces/payload-service.interface';
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
@@ -29,7 +29,8 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
                                         payload.device,
                                         payload.osID || '',
                                         payload.pkCategory || 0,
-                                        payload.codeCategory || ''
+                                        payload.codeCategory || '',
+                                        payload.occupied || false
                                         );
         if (!ok) {            
             return callback({
@@ -77,9 +78,8 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
     client.on('logout-user', (payload: any, callback: Function) => {
 
         const userLogout = listUser.onFindUser( client.id );
-        // console.log('usuario logout', userLogout.pkUser);
         const pkUserLogout = userLogout.pkUser;
-        const ok = listUser.onLogoutUser( client.id );
+        const ok = listUser.onLogoutUser( client.id, pkUserLogout );
         if (!ok) {
             return callback({
                 ok: false, 
@@ -96,7 +96,6 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
         });
         
         io.to('WEB').emit('user-disconnect', { pkUser: pkUserLogout });
-        console.log('clientes configurados', listUser.onGetUsers());
         onSingSocketDB(pkUserLogout, '', false).then( (resSql) => {
 
             callback({
@@ -124,17 +123,32 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
                 console.error('Ocurrio un error al eliminar usuario de la sala');
             }
         });
-        // io.to('WEB').emit('user-disconnect', { pkUser: userDelete.pkUser });
-        // onSingSocketDB(userDelete.pkUser || 0, userDelete.osID, false).then( (resSql) => {
-            
-        //     console.log('Se desconecto un usuario', resSql);
-            
-        // }).catch( e => {
-
-        //     console.error('Error al procesar sql', e);
-        // });
     });
 };
+
+export const serviceDelRun = ( client: Socket, io: SocketIO.Server ) => {
+
+    client.on('cancel-service-run', ( payload: IPayloadDel, callback: Function ) => {
+        const userReceptor = listUser.onFindUserForPk( payload.pkUser );
+        
+        if (userReceptor.pkUser === 0) {
+            return callback({
+                ok: false,
+                error: {
+                    message: 'No se encontró receptor'
+                }
+            });
+        }
+
+        io.in( userReceptor.id ).emit('cancel-service-run-receptor', payload);
+        callback({
+            ok: true,
+            message: 'Se notifico a receptor baja de servicio'
+        });
+
+    });
+    
+}
 
 // notificando a conductores de acuerdo a su categoría 
 // cuando se registra un nuevo servicio de taxi
@@ -238,11 +252,6 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             };
         } else {
             let driverNotify:UserSocket[] = [];
-            // console.log('hijos cercanos ', indexChildren);
-            // indexChildren.forEach( indexHexChildren => {
-            //     // io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
-            //     driverNotify.push(...listUser.onFindDriversHex( indexHexChildren ) );
-            // });
 
             switch (payload.codeCategory) {
                 case 'BASIC':
@@ -335,9 +344,6 @@ export const configCategoryUser = ( client: Socket ) => {
             });
         }
         
-        // console.log('categoria cambiada', payload); 
-        console.log('categoria cambiada', user);
-        // user.onUpdateCategory( payload.pkCategory , payload.codeCategory );
         client.join( payload.codeCategory , (error: any) => {
             if (error) {
                 return callback({
@@ -368,10 +374,6 @@ export const configCategoryUser = ( client: Socket ) => {
 
 export const sendNotify = (client: Socket, io: SocketIO.Server) => {
     client.on('send-notification-web', async(payload: INotifySocket, callback) => {
-        // recibir id del usuario
-        // titulo de noti
-        // subtitulo noti
-        // mensaje
         
         let resProm = await onAddNotify( client.id, payload );
         if (!resProm.ok) {
@@ -383,12 +385,7 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
             io.in( resProm.socket || '' ).emit('new-notify-web', payload);
         }
         callback(callback);
-        /**
-         *  'pkUser',
-			'role',
-			'userName',
-			'nameComplete' ;
-         */
+
     });
 }
 
@@ -437,6 +434,11 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
                 }
             });
         }
+
+        //emitiendo coordenadas al panel para el monitoreo
+        if (user.pkUser !== 0) {            
+            io.in('WEB').emit('current-position-driver', { coords: payload, pkUser: user.pkUser, occupied: user.occupied });
+        }
         
         onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( () => {
             
@@ -464,7 +466,6 @@ export const newOfferDriver = ( client: Socket, io: SocketIO.Server ) => {
     client.on('newOffer-driver', (payload: any, callback: Function) => {
         const userClient = listUser.onFindUserForPk( Number( payload.pkClient ) );
 
-        // console.log('emitiendo a usuario socket', userClient.id);
         if (userClient.pkUser !== 0) {
             // enviar data de oferta
             io.in( userClient.id ).emit('newOffer-service', { dataOffer: payload.dataOffer });
@@ -491,7 +492,6 @@ export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
         }
         
         callback({ok: false, message: 'conductor desconectado'});
-        // callback( {ok: false, message: 'Cliente no conectado' } );
 
     });
 };
@@ -499,18 +499,16 @@ export const newOfferClient = ( client: Socket, io: SocketIO.Server ) => {
 // escuchamos cuando el conductor esta ocupado o desocupado de un servicio de taxi
 export const changeOccupiedDriver = ( client: Socket ) => {
     client.on('occupied-driver', ( payload: any, callback: Function ) => {
-        const driverSocket = listUser.onFindUser( client.id );
-
-        if (driverSocket.pkUser === 0) {
+        const driverChangeed = listUser.onChangeOccupierd( payload.pkUser, payload.occupied );
+        console.log('cambiando estado conductor', listUser.onGetUsers());
+        if (!driverChangeed) {
             return callback({
                 ok: false,
                 message: 'No se encontró conductor'
             });
         }
 
-        driverSocket.occupied = payload.occupied;
-
-        onUpdateOccupied( driverSocket.pkUser, payload.occupied ).then( (res) => {
+        onUpdateOccupied( payload.pkUser, payload.occupied ).then( (res) => {
 
             callback({
                 ok: true,
@@ -524,7 +522,6 @@ export const changeOccupiedDriver = ( client: Socket ) => {
             });
         });
         
-        // cambiar bandera en base de datos
 
     });
 };
@@ -566,7 +563,6 @@ export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
 
         onUpdateTravelService( payload, clientSocket.pkUser ).then( (resTravel) => {
             
-            // console.log('Se cambio fechas de llegada servicio', resTravel);
             callback({
                 ok: true,
                 message: 'Cliente notificado'
@@ -587,7 +583,6 @@ function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<I
     
     return new Promise( (resolve, reject)  => {
         let sql = `CALL as_sp_singSocket(${ pkUser }, '${ osId }', ${ status });`;
-        // console.log('sing sql', sql);
     
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
             if (error) {                
@@ -607,11 +602,7 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
         let userAT: any = listUser.onGetAdminSort( 'ATTENTION_ROLE' );
         let userIO: any = listUser.onFindUser( id );
         
-        // console.log('user socket', userIO);
-        // console.log('user attention', userAT);
-        
         if (!userIO) {
-            // console.log('no encontramos usuario socket');
             resolve({
                 ok: false,
                 error: {
@@ -622,7 +613,6 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
 
         let sqlNoty = '';
         if (!userAT) {
-            // console.log('no hay atencion al cliente');
             let sqlUserAt = `CALL as_sp_getUserAttentionOf()`;
             mysqlCnn.onExecuteQuery(sqlUserAt, (err: any, dataOf: any[]) => {
                 
@@ -675,26 +665,15 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
                 });
             });
         }
-
-      
-        
   });
 }
 
 function onUpdateCoords( pkUser: number, lat: number, lng: number, indexHex: string ): Promise<IResponse> {
-    return new Promise( (resolve, reject) => {
-        /**
-         * IN `InPkUser` int,
-            IN `InIndexHex` varchar(20),
-            IN `InLat` float(20,10),
-            IN `InLng` float(20,10)
-         */
-        
+    return new Promise( (resolve, reject) => {        
         
         let sql = `CALL ts_sp_updateUserCoords( ${ pkUser }, '${ indexHex }', ${ lat }, ${ lng } );`;
 
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
-            // console.log('data coord update', data);
             if (error) {
                 reject({ok: false, error});
             }
@@ -752,13 +731,6 @@ function onUpdateOccupied( pkUser: number, occupied: boolean ): Promise<IRespons
 
 function onUpdateTravelService( payload: any, pkUser: number ): Promise<IResponse> {
     return new Promise( (resolve, reject) => {
-        /*
-        IN `InPkService` int,
-        IN `InRunDestination` tinyint,
-        IN `InFinishDestination` tinyint,
-        IN `InPkUser` int
-            
-        */
 
         let sql = `CALL ts_sp_updateTravelService( `;
         sql += `${ payload.pkService }, `;
@@ -779,6 +751,5 @@ function onUpdateTravelService( payload: any, pkUser: number ): Promise<IRespons
             resolve({ok: true, data: json[0]});
 
         });
-        // 
     });
 }

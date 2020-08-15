@@ -53,7 +53,7 @@ export class ListUserSockets {
         return finded;
     }
 
-    onSingUser( id: string, pkUser: number, userName: string, nameComplete: string, role: string, device: string, osID = '', pkCategory = 0, codeCategory = 'no especificado' ): boolean {
+    onSingUser( id: string, pkUser: number, userName: string, nameComplete: string, role: string, device: string, osID = '', pkCategory = 0, codeCategory = 'no especificado', occupied = false ): boolean {
 
         const finded = this.listUser.find( user => user.id === id  );
         if (!finded) {
@@ -79,16 +79,20 @@ export class ListUserSockets {
         finded.osID = osID;
         finded.pkCategory = pkCategory;
         finded.category = codeCategory;
-        
+        finded.occupied = occupied;
         return true;
     }
 
-    onLogoutUser(id: string) {
+    onLogoutUser(id: string, pkUser: number) {
         const finded = this.listUser.find( user => user.id === id  );
         if (!finded) {
             console.error('No se encontró usuario socket');
             return false;
         }
+        
+        // if (pkUser !== 0) {            
+        //     this.listUser = this.listUser.filter( user => user.pkUser !== pkUser && user.id !== id );
+        // }
         
         finded.pkUser = 0,
         finded.role = '';
@@ -97,6 +101,7 @@ export class ListUserSockets {
         finded.timer = 0;
         finded.device = '';
         finded.osID = '';
+        finded.occupied = false;
         
         return true;
     }
@@ -164,6 +169,15 @@ export class ListUserSockets {
         }
 
         return finded;
+    }
+
+    onChangeOccupierd( pk: number, occupied: boolean ){
+        const findeed = this.listUser.filter( uss => uss.pkUser === pk && uss.role === 'DRIVER_ROLE');
+        findeed.forEach( item => {
+            item.occupied = occupied;
+        });
+
+        return true;
     }
 
     onFindUserForPk( pk: number ): UserSocket {

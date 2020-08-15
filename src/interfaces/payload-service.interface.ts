@@ -15,3 +15,8 @@ export interface IPayloadServiceNew {
     coords: ICoords,
     data: IBodyService;
 }
+
+export interface IPayloadDel {
+    pkUser: number;
+    msg: string;
+}

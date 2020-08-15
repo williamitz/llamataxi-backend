@@ -126,6 +126,7 @@ export default class MainServer {
                     if (this.journal !== journal.codeJournal) {
                         console.log('notificar con socket');
                         this.io.to('MOVILE').emit('change-journal', journal);
+                        this.io.to('WEB').emit('change-journal', journal);
                         this.journal = journal.codeJournal;
                     }
                 }

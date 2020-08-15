@@ -226,4 +226,25 @@ DriverRoutes.delete('/Driver/:pkUser/:pkDriver/:status', [verifyToken, verifyWeb
     });
 });
 
+DriverRoutes.post('/Monitor/Drivers', [verifyToken], (req: any, res: Response) => {
+    
+    let sql = 'CALL as_sp_getMonitorDrivers();'
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            // showError: data[0].showError,
+            data
+        });
+    });
+
+});
+
 export default DriverRoutes;

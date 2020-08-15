@@ -35,7 +35,6 @@ osRouter.post('/Push/Send', [verifyToken], (req: Request, res: Response) => {
         });
 
     }).catch( (e: any) => {
-        console.log('error al aneviar push', e);
         res.status(400).json({
             ok: false,
             error: e
