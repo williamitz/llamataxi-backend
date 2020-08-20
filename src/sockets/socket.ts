@@ -172,12 +172,6 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
         const indexChildren: string[] = h3.h3ToChildren( indexParent , radiusPentagon);
 
         // notificar a los conductores ue se encuentren en los índices hijos
-        let response = {
-            ok: true,
-            data: {},
-            total: 0,
-            error: {}
-        };
 
         let payloadEmit = {
             data: payload.data,
@@ -187,129 +181,57 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             totalDrivers: drivers.length
         };
         
-        if (drivers.length > 0 ) {
+        let driverNotify:UserSocket[] = [];
 
-            let driverNotify:UserSocket[] = [];
+        switch (payload.codeCategory) {
+            case 'BASIC':
+                
+                // notificamos a todos los conductores en los pentagonos hijos
+                indexChildren.forEach( indexHexChildren => {
+                    io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                });
 
-            switch (payload.codeCategory) {
-                case 'BASIC':
+                driverNotify = drivers;
 
-                    // io.in( indexHexService ).emit( 'new-service', payloadEmit );
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
-                    });
+                break;
+            case 'STANDAR':
+                
+                indexChildren.forEach( indexHexChildren => {
+                    io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
+                    io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                });
+                
+                driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
+                
+                break;
+            case 'PREMIUM':
+                
+                // notificamos a todos los conductores en los pentagonos hijos
+                indexChildren.forEach( indexHexChildren => {
+                    io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                });
+                driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
 
-                    driverNotify = drivers;
+                break;
+        
+            default:                
+                // notificamos a todos los conductores en los pentagonos hijos
+                indexChildren.forEach( indexHexChildren => {
+                    io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                });
+                driverNotify = drivers;
 
-                    break;
-                case 'STANDAR':
-                    
-                    // io.in( `${indexHexService}-STANDAR` ).emit( 'new-service', payloadEmit );
-                    // io.in( `${indexHexService}-PREMIUM` ).emit( 'new-service', payloadEmit );
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
-                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
-                    });
-                    
-                    driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
-                    
-                    break;
-                case 'PREMIUM':
-                    
-                    // io.in( `${indexHexService}-PREMIUM` ).emit( 'new-service', payloadEmit );
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
-                    });
-                    driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
-
-                    break;
-            
-                default:
-                    // notificamos a todos los conductores en el pentagono
-                    // donde se realizó el servicio
-                    io.in( indexHexService ).emit( 'new-service', payloadEmit );
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
-                    });
-                    driverNotify = drivers;
-
-                    break;
+                break;
             }
             
-            response = {
+            let response = {
                 ok: true,
                 data: driverNotify,
                 total: driverNotify.length,
-                error: {}
-            };
-        } else {
-            let driverNotify:UserSocket[] = [];
-
-            switch (payload.codeCategory) {
-                case 'BASIC':
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
-                    });
-
-                    driverNotify = drivers;
-
-                    break;
-                case 'STANDAR':
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
-                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
-                    });
-                    
-                    driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
-                    
-                    break;
-                case 'PREMIUM':
-                                        
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
-                    });
-                    driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
-
-                    break;
-            
-                default:
-                    
-                    // notificamos a todos los conductores en los pentagonos hijos
-                    indexChildren.forEach( indexHexChildren => {
-                        io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
-                    });
-
-                    driverNotify = drivers;
-
-                    break;
-            }
-
-            // driverNotify.forEach( driver => {
-            //     io.in( driver.id ).emit( 'new-service', payloadEmit );
-            // });
-            
-            response = {
-                ok: driverNotify.length > 0 ? true : false,
-                data: driverNotify,
-                total: driverNotify.length,
                 error: {
-                    message: 'No se encontraron conductores para notificar'
+                    message: driverNotify.length === 0 ? 'No se encontrarón conductores cercanos' : ''
                 }
             };
-        }
 
         callback( response );
 
@@ -389,7 +311,7 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
     });
 }
 
-export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
 
     client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
         const user = listUser.onFindUser( client.id );
@@ -402,13 +324,28 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
         // agregar al usuario a la sala con el indice del pentágono en el que se encuentra
         // user.indexHex = indexHex;
 
-        if (oldIndex !== '' && oldIndex !== roomIndex) {
-            client.leave( oldIndex, (err: any) => {
+        if (oldIndex !== roomIndex) {
+
+            if (oldIndex !== '') {                
+                client.leave( oldIndex, (err: any) => {
+                    if (err) {
+                        console.error(`Error al expulsar a ${ user.userName } de la sala ${ roomIndex }`);
+                    }
+                });
+            }
+
+            client.join( roomIndex, (err: any) => {
                 if (err) {
-                    console.error(`Error al expulsar a ${ user.userName } de la sala ${ roomIndex }`);
+                    console.error(`Error al agregar a ${ user.userName } en la sala ${ roomIndex }`);
                 }
             });
-            if (oldCategory !== '' && oldRoomIndexCategory !== roomIndexCategory) {
+
+        }
+
+        
+        if (oldRoomIndexCategory !== roomIndexCategory) {
+
+            if (oldCategory !== '') {
                 
                 client.leave( oldRoomIndexCategory, (err: any) => {
                     if (err) {
@@ -416,29 +353,31 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
                     }
                 });
             }
-
-        }
-
-        if (oldIndex !== roomIndex) {
-            client.join( roomIndex, (err: any) => {
-                if (err) {
-                    console.error(`Error al agregar a ${ user.userName } en la sala ${ roomIndex }`);
-                }
-            });
-        }
         
-        if (oldRoomIndexCategory !== roomIndexCategory) {
-            client.leave( roomIndexCategory, (err: any) => {
+            client.join( roomIndexCategory, (err: any) => {
                 if (err) {
                     console.error(`Error al agregar a ${ user.userName } en la sala ${ roomIndexCategory }`);
                 }
             });
+            
         }
 
         //emitiendo coordenadas al panel para el monitoreo
+        const payloadPosition = { 
+                                    pkUser: user.pkUser,
+                                    coords: payload,
+                                    occupied: user.occupied 
+                                };
         if (user.pkUser !== 0) {            
-            io.in('WEB').emit('current-position-driver', { coords: payload, pkUser: user.pkUser, occupied: user.occupied });
+            io.in('WEB').emit('current-position-driver', payloadPosition);
         }
+
+        // emitiendo coords a clientes vecinos
+        const arrChildren: string[] = h3.kRing( indexHex , 1);
+        arrChildren.forEach( (indexChildren) => {
+            const roomClient = `${ indexChildren }-client`;
+            io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
+        });
         
         onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( () => {
             
@@ -459,6 +398,33 @@ export const currentPosition = ( client: Socket, io: SocketIO.Server, radiusPent
         });
     });
 
+};
+
+export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+    client.on('current-position-client', (payload: IUserCoords, callback: Function ) => {
+        const user = listUser.onFindUser( client.id );
+        const oldIndexHex = user.indexHex;
+        const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
+
+        if ( oldIndexHex !== indexHex ) {
+            
+            if (oldIndexHex !== '') {                
+                const oldRoom = `${ oldIndexHex }-client`;
+                client.leave( oldRoom, (err: any) => {
+                    if (err) {
+                        console.error(`Error al expulsar a ${ user.userName } de la sala ${ oldRoom }`);
+                    }
+                });
+            }
+            
+            const newRoom = `${ indexHex }-client`;
+            client.join( newRoom , (err: any) => {
+                if (err) {
+                    console.error(`Error al agregar a ${ user.userName } en la sala ${ newRoom }`);
+                }
+            });
+        }
+    });
 };
 
 // escuchando cuando un conductor acepta o envía una oferta

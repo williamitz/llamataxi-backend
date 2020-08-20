@@ -224,33 +224,34 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
     
     let fkUser = req.userData.pkUser || 0;
     // mostrarle al conductor la demanda que existe en su poligono padre
-    
-    /**
-     * IN `InPkUser` int,
-        IN `InChildrenOne` varchar(20),
-        IN `InChildrenTwo` varchar(20),
-        IN `InChildrenThree` varchar(20),
-        IN `InChildrenFour` varchar(20),
-        IN `InChildrenFive` varchar(20),
-        IN `InChildrenSix` varchar(20),
-        IN `InChildrenSevent` varchar(20)
-     */
+
     const userSk: UserSocket = Users.onFindUserForPk( fkUser );
 
+    /**
+     * Obtenga todos los hexágonos en un anillo k alrededor de un centro dado. 
+     * El orden de los hexágonos no está definido.
+     */
+    // const indexChildren: string[] = h3.kRing( userSk.indexHex , 1);
+
     // obtener el padre de la ubicación dada en un radio mas grande
-    const indexChildren: string[] = h3.kRing( userSk.indexHex , 1);
+    const indexParent = h3.h3ToParent( userSk.indexHex , Server.radiusPather);
 
+    // extraer los indices hijos de un pentágono con radio 6 del indice padre
+    const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
+
+
+    const InWhereIndex = `( '${ indexChildren.join("', '") }' )`;
     let sql =  `CALL ts_sp_getZonesDemand( ${ fkUser }, `;
-    sql += `'${ indexChildren[0] || '' }', `;
-    sql += `'${ indexChildren[1] || '' }', `;
-    sql += `'${ indexChildren[2] || '' }', `;
-    sql += `'${ indexChildren[3] || '' }', `;
-    sql += `'${ indexChildren[4] || '' }', `;
-    sql += `'${ indexChildren[5] || '' }', `;
-    sql += `'${ indexChildren[6] || '' }'`;
-    sql += ` );`;
+    // sql += `'${ indexChildren[0] || '' }', `;
+    // sql += `'${ indexChildren[1] || '' }', `;
+    // sql += `'${ indexChildren[2] || '' }', `;
+    // sql += `'${ indexChildren[3] || '' }', `;
+    // sql += `'${ indexChildren[4] || '' }', `;
+    // sql += `'${ indexChildren[5] || '' }', `;
+    // sql += `'${ indexChildren[6] || '' }'`;
+    sql += ` "${ InWhereIndex }");`;
 
-
+    console.log('sql zonas calientes', sql);
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
         if (error) {

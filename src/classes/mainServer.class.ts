@@ -42,7 +42,7 @@ export default class MainServer {
         this.nameJournal = '';
         this.percentRate = 0;
         this.radiusPentagon = 7;
-        this.radiusPather = 4;
+        this.radiusPather = 5;
         this.intervalJorunal = setInterval(() => {}, 60000);
     }
 
@@ -53,7 +53,7 @@ export default class MainServer {
             mainSocket.singUser( client, this.io  );
             mainSocket.logoutUser( client, this.io );
             mainSocket.sendNotify( client, this.io );
-            mainSocket.currentPosition( client, this.io, this.radiusPentagon );
+            mainSocket.currentPosDriver( client, this.io, this.radiusPentagon );
             mainSocket.newService( client, this.io, this.radiusPentagon, this.radiusPather );
             mainSocket.configCategoryUser( client );
             mainSocket.newOfferDriver( client, this.io );
