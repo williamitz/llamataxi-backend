@@ -56,19 +56,19 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         console.log('clientes configurados', listUser.onGetUsers());
         onSingSocketDB(payload.pkUser, payload.osID, true).then( (resSql) => {
 
-            return callback({
+            callback({
                 ok: true, 
                 message: 'Cliente socket configurado con éxito :D',
                 data: resSql.data
             });
             
-        }).catch( e => {
+        }).catch( error => {
 
-            console.error('Error al procesar sql', e);
-            // callback({
-            //     ok: false,
-            //     data: e
-            // });
+            console.error('Error al procesar sql', error);
+            callback({
+                ok: false,
+                error
+            });
         });
     });
 };
@@ -400,7 +400,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
 
 };
 
-export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+export const currentPosClient = ( client: Socket, radiusPentagon: number ) => {
     client.on('current-position-client', (payload: IUserCoords, callback: Function ) => {
         const user = listUser.onFindUser( client.id );
         const oldIndexHex = user.indexHex;
@@ -424,6 +424,12 @@ export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPen
                 }
             });
         }
+ 
+        callback({
+            ok: true,
+            indexHex
+        });
+
     });
 };
 
@@ -435,10 +441,10 @@ export const newOfferDriver = ( client: Socket, io: SocketIO.Server ) => {
         if (userClient.pkUser !== 0) {
             // enviar data de oferta
             io.in( userClient.id ).emit('newOffer-service', { dataOffer: payload.dataOffer });
-            callback({ok: true, message: 'Se emitió a cliente socket'})
+            return callback({ok: true, message: 'Se emitió a cliente socket'})
         }
 
-        // callback( {ok: false, message: 'Cliente no conectado' } );
+        callback( {ok: false, message: 'Cliente no conectado' } );
 
     });
 };
