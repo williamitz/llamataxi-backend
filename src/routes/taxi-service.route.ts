@@ -616,5 +616,35 @@ TServiceRouter.put('/Service/Calification/:id', [verifyToken, verifyDriverClient
     }); 
 });
 
+TServiceRouter.get('/Waiting/Driver', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+
+    let fkUser = req.userData.pkUser || 0;
+
+    const userSk: UserSocket = Users.onFindUserForPk( fkUser );
+
+    const indexChildren: string[] = h3.kRing( userSk.indexHex , 1);
+
+    const InWhereIndex = `( '${ indexChildren.join("', '") }' )`;
+
+    let sql = `CALL ts_sp_getDriversWaiting( "${ InWhereIndex }" )`;
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data
+        });
+
+    });
+
+});
+
 
 export default TServiceRouter;

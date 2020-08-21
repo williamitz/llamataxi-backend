@@ -91,11 +91,30 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
 
         client.leave( userLogout.device || '', (err: any) => {
             if (err) {
-                console.error('Ocurrio un error al expulsar usuario en la sala');
+                console.error('Ocurrio un error al expulsar usuario en la sala', userLogout.device );
+            } 
+        });
+
+        client.leave( userLogout.role || '', (err: any) => {
+            if (err) {
+                console.error('Ocurrio un error al expulsar usuario en la sala', userLogout.role);
             } 
         });
         
         io.to('WEB').emit('user-disconnect', { pkUser: pkUserLogout });
+
+        if (userLogout.role === 'DRIVER_ROLE') {
+            
+            // emitiendo coords a clientes vecinos
+            const arrChildren: string[] = h3.kRing( userLogout.indexHex , 1);
+            arrChildren.forEach( (indexChildren) => {
+                const roomClient = `${ indexChildren }-client`;
+                io.in( roomClient ).emit( 'logout-driver', { pkUser: userLogout.pkUser } );
+            });
+
+        }
+
+
         onSingSocketDB(pkUserLogout, '', false).then( (resSql) => {
 
             callback({
@@ -368,7 +387,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
                                     coords: payload,
                                     occupied: user.occupied 
                                 };
-        if (user.pkUser !== 0) {            
+        if (user.pkUser !== 0 ) {            
             io.in('WEB').emit('current-position-driver', payloadPosition);
         }
 
@@ -429,7 +448,6 @@ export const currentPosClient = ( client: Socket, radiusPentagon: number ) => {
             ok: true,
             indexHex
         });
-
     });
 };
 
