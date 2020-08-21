@@ -54,6 +54,8 @@ export default class MainServer {
             mainSocket.logoutUser( client, this.io );
             mainSocket.sendNotify( client, this.io );
             mainSocket.currentPosDriver( client, this.io, this.radiusPentagon );
+            mainSocket.currentPosClient( client, this.radiusPentagon );
+            
             mainSocket.newService( client, this.io, this.radiusPentagon, this.radiusPather );
             mainSocket.configCategoryUser( client );
             mainSocket.newOfferDriver( client, this.io );

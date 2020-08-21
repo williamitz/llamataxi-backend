@@ -368,7 +368,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
                                     coords: payload,
                                     occupied: user.occupied 
                                 };
-        if (user.pkUser !== 0) {            
+        if (user.pkUser !== 0 ) {            
             io.in('WEB').emit('current-position-driver', payloadPosition);
         }
 
@@ -400,7 +400,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
 
 };
 
-export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
+export const currentPosClient = ( client: Socket, radiusPentagon: number ) => {
     client.on('current-position-client', (payload: IUserCoords, callback: Function ) => {
         const user = listUser.onFindUser( client.id );
         const oldIndexHex = user.indexHex;
@@ -424,6 +424,11 @@ export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPen
                 }
             });
         }
+
+        callback({
+            ok: true,
+            indexHex
+        });
     });
 };
 
