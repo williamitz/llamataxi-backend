@@ -62,6 +62,8 @@ export default class MainServer {
             mainSocket.changeOccupiedDriver( client );
             mainSocket.currentPositionService( client, this.io );
             mainSocket.statusTravelDriver( client, this.io );
+            mainSocket.travelPanic( client, this.io );
+            
             
         });
     }

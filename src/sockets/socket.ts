@@ -9,6 +9,14 @@ import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
 import { IOffer } from '../interfaces/offer.interface';
 import { IWatchGeo, IPayloadServiceNew, IPayloadDel } from '../interfaces/payload-service.interface';
+import { IPanic } from '../interfaces/body_panic.interface';
+import Cryptr from 'cryptr';
+import { ENCRYPT_KEY, TWILIO_ID, TWILIO_TOKEN, TWILIO_PHONE } from '../global/environments.global';
+import twilio from 'twilio';
+import { IContact } from '../interfaces/contacs.interfaces';
+const cryptr = new Cryptr(ENCRYPT_KEY);
+
+const clientTwilio = twilio( TWILIO_ID , TWILIO_TOKEN);
 
 let listUser = ListUserSockets.instance;
 let mysqlCnn = MysqlClass.instance;
@@ -78,8 +86,12 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
     client.on('logout-user', (payload: any, callback: Function) => {
 
         const userLogout = listUser.onFindUser( client.id );
-        const pkUserLogout = userLogout.pkUser;
-        const ok = listUser.onLogoutUser( client.id, pkUserLogout );
+        const pkUser = userLogout.pkUser;
+        const device = userLogout.device;
+        const role = userLogout.role;
+        const indexHex = userLogout.indexHex;
+        
+        const ok = listUser.onLogoutUser( client.id, pkUser );
         if (!ok) {
             return callback({
                 ok: false, 
@@ -89,33 +101,32 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
             });
         }
 
-        client.leave( userLogout.device || '', (err: any) => {
+        client.leave( device || '', (err: any) => {
             if (err) {
-                console.error('Ocurrio un error al expulsar usuario en la sala', userLogout.device );
+                console.error('Ocurrio un error al expulsar usuario en la sala', device );
             } 
         });
 
-        client.leave( userLogout.role || '', (err: any) => {
+        client.leave( role || '', (err: any) => {
             if (err) {
-                console.error('Ocurrio un error al expulsar usuario en la sala', userLogout.role);
+                console.error('Ocurrio un error al expulsar usuario en la sala', role);
             } 
         });
         
-        io.to('WEB').emit('user-disconnect', { pkUser: pkUserLogout });
+        io.to('WEB').emit('user-disconnect', { pkUser });
 
-        if (userLogout.role === 'DRIVER_ROLE') {
+        if (role === 'DRIVER_ROLE') {
             
             // emitiendo coords a clientes vecinos
-            const arrChildren: string[] = h3.kRing( userLogout.indexHex , 1);
+            const arrChildren: string[] = h3.kRing( indexHex , 1);
             arrChildren.forEach( (indexChildren) => {
-                const roomClient = `${ indexChildren }-client`;
-                io.in( roomClient ).emit( 'logout-driver', { pkUser: userLogout.pkUser } );
+                io.in( `${ indexChildren }-client` ).emit( 'logout-driver', { pkUser } );
             });
 
         }
 
 
-        onSingSocketDB(pkUserLogout, '', false).then( (resSql) => {
+        onSingSocketDB(pkUser, '', false).then( (resSql) => {
 
             callback({
                 ok: true, 
@@ -398,13 +409,14 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
             io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
         });
         
-        onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( () => {
+        onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
             
             // notificar a clients cercanos a la ubicación, y al panel web
             callback({
                 ok: true,
                 message: `Se actualizo coordenadas, pendiente notificar ${ roomIndex } - ${ roomIndexCategory }`,
-                indexHex: roomIndex
+                indexHex: roomIndex,
+                data: resSql.data
             });
 
         }).catch(e => {
@@ -567,6 +579,137 @@ export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
         });
 
     });
+};
+
+// escuchar cuando se envía una alerta de pánico
+export const travelPanic = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('panic_travel', ( payload: IPanic, callback: Function ) => {
+        const user = listUser.onFindUser( client.id );
+        
+        onAddPanic( payload.pkService, payload.fkPerson, payload.fkUser            
+            , user.nameComplete, payload.lat, payload.lng, payload.isClient, io ).then( (res: any) => {
+
+            if (res.showError === 0) {
+                
+                let sql = `CALL ts_sp_getConactsForAlert(`;
+                sql += `${ payload.fkPerson }, `;
+                sql += `${ payload.pkService }, `;
+                sql += `${ payload.isClient } );`;
+            
+                mysqlCnn.onExecuteQuery(sql, async (errorNotify: any, data: any[]) => {
+                    if (errorNotify) {                
+                        console.log('Error al listar los datos de contacto');
+                    }
+
+                    let dataString = JSON.stringify(data);
+                    let jsonContacts: IContact[] = JSON.parse(dataString);
+
+                    await Promise.all( jsonContacts.map( async (contact) => {
+
+                        console.log('enviando mensjae a ', `${ contact.prefixPhone } ${ contact.phone }`);
+                        const twlioRes = await clientTwilio.messages
+                        .create({
+                              from: TWILIO_PHONE, // de
+                              to: `${ contact.prefixPhone } ${ contact.phone }`, // para
+                              body: `Llamataxi Perú - ${ contact.msg }`
+                        });
+
+                        console.log('Mensaje enviado ', twlioRes.sid);
+                    }));
+
+                    callback(res);
+                });
+
+            } else {
+                callback(res);
+            }
+
+        }).catch( (e) => {
+            console.log('error al grabar alerta', e);
+            callback({
+                ok: false,
+                message: 'Error interno de base de datos'
+            });
+
+        });
+    });
+};
+
+function onAddPanic( pkService: number, fkPerson: number, fkUser: number
+                        , msg: string, lat: number
+                        , lng: number, isClient: boolean, io: SocketIO.Server ) {
+
+    return new Promise( (resolve, reject)  => {
+        let sql = `CALL ts_sp_addAlert(`;
+        sql += `${ pkService }, `;
+        sql += `${ fkPerson }, `;
+        sql += `${ isClient }, `;
+        sql += `${ lat }, `;
+        sql += `${ lng }, `;
+        sql += `${ fkUser }, `;
+        sql += `'127.0.0.0' );`;
+    
+        mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+            if (error) {                
+                reject( {ok: false, error} );
+            }
+
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            if (data[0].showError === 0) {
+
+                const url = `/admin/alertService/${ cryptr.encrypt( data[0].pkAlert ) }`;
+
+                let sql = `CALL ts_sp_addAlertNotify(`;
+                sql += `'${ isClient ? 'Alerta cliente' : 'Alerta conductor' }', `;
+                sql += `'${ msg }', `;
+                sql += `'${ url }', `;
+                sql += `${ fkUser }, `;
+                sql += `'127.0.0.0' );`;
+            
+                mysqlCnn.onExecuteQuery(sql, (errorNotify: any, data: any[]) => {
+                    if (errorNotify) {                
+                        reject( {ok: false, error: errorNotify} );
+                    }
+
+                    io.in( 'WEB' ).emit('new-alert-service', { url });
+
+                    resolve({ 
+                        ok: true, 
+                        data: json[0],
+                        showError: json[0].showError,
+                        message: onGetError( json[0].showError ) 
+                    });
+                });
+                
+            } else {
+                resolve({ 
+                    ok: true, 
+                    data: json[0],
+                    showError: json[0].showError,
+                    message: onGetError( json[0].showError ) 
+                });
+            }
+
+        });
+    });
+
+}
+
+function onGetError( showError: number ): string {
+    let arrErr = showError === 0 ? ['Se notificó alerta con éxito'] : ['Error'];
+
+    if (showError & 1) {
+        arrErr.push('ya ha notificado una alerta en este servicio');
+    }
+
+    if (showError & 2) {
+        arrErr.push('no se encontró servicio');
+    }
+
+    return arrErr.join(', ');
 };
 
 function onSingSocketDB( pkUser: number, osId = '', status: boolean ): Promise<IResponse> {

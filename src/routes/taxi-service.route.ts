@@ -242,16 +242,9 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
 
     const InWhereIndex = `( '${ indexChildren.join("', '") }' )`;
     let sql =  `CALL ts_sp_getZonesDemand( ${ fkUser }, `;
-    // sql += `'${ indexChildren[0] || '' }', `;
-    // sql += `'${ indexChildren[1] || '' }', `;
-    // sql += `'${ indexChildren[2] || '' }', `;
-    // sql += `'${ indexChildren[3] || '' }', `;
-    // sql += `'${ indexChildren[4] || '' }', `;
-    // sql += `'${ indexChildren[5] || '' }', `;
-    // sql += `'${ indexChildren[6] || '' }'`;
     sql += ` "${ InWhereIndex }");`;
 
-    console.log('sql zonas calientes', sql);
+    // console.log('sql zonas calientes', sql);
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
         if (error) {
