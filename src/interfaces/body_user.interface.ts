@@ -46,3 +46,9 @@ export interface IPassword {
     password: string;
     passRepit: string;
 }
+
+export interface IPasswordWeb {
+    pkUser: number;
+    nameComplete: string;
+    password: string;
+}
