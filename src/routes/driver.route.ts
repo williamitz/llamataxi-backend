@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { verifyToken, verifyWebmasterRole } from '../middlewares/token.mdd';
+import { verifyToken, verifyWebmasterRole, verifyWebRoles } from '../middlewares/token.mdd';
 import MysqlClass from '../classes/mysqlConnect.class';
 import reqIp from 'request-ip';
 import { IBodyUser } from '../interfaces/body_user.interface';
 import MainServer from '../classes/mainServer.class';
+import h3 from 'h3-js';
 
 let DriverRoutes = Router();
 
@@ -247,4 +248,43 @@ DriverRoutes.post('/Monitor/Drivers', [verifyToken], (req: any, res: Response) =
 
 });
 
+DriverRoutes.get('/Monitor/GetZones', [verifyToken, verifyWebRoles], (req: any, res: Response) => {
+    
+    let sql =  `CALL as_sp_getZonesDemand( );`;
+
+    // console.log('sql zonas calientes', sql);
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        let dataString = JSON.stringify(data);
+        let json: any[] = JSON.parse(dataString);
+
+        if (json.length) {
+            
+            json.forEach( zone => {
+                // extraemos las coordenadas de los vértices del polígono
+                zone.polygon = h3.h3ToGeoBoundary( zone.indexHex, false );
+                // extraemos las coordenadas del centro del polígono
+                zone.center = h3.h3ToGeo( zone.indexHex );
+            });
+
+        }
+
+        res.json({
+            ok: true,
+            data: json
+        });
+
+    });
+
+
+    
+
+});
 export default DriverRoutes;

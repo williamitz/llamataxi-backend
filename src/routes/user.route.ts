@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
-import { verifyToken, verifyWebmasterRole, verifyClientRole, verifyDriverRole } from '../middlewares/token.mdd';
-import { IBodyUser, IUserProfile, IPassword } from '../interfaces/body_user.interface';
+import { verifyToken, verifyWebmasterRole, verifyClientRole, verifyDriverRole, verifyWebRoles } from '../middlewares/token.mdd';
+import { IBodyUser, IUserProfile, IPassword, IPasswordWeb } from '../interfaces/body_user.interface';
 import reqIp from 'request-ip';
 import MysqlClass from '../classes/mysqlConnect.class';
 import bcrypt from 'bcrypt';
@@ -485,6 +485,43 @@ UserRouter.post( '/User/ChangePass', [verifyToken], (req: any, res: Response) =>
         });
 
     });
+});
+
+UserRouter.put('/User/ChangePass/Web', [verifyToken, verifyWebRoles], (req: any, res: Response) => {
+
+    let pkUserToken = req.userData.pkUser || 0;
+    let body: IPasswordWeb = req.body;
+
+    /*
+        IN `InPkUser` int,
+        IN `InPassword` varchar(200),
+        IN `InFkUser` int,
+        IN `InIpUser` varchar(20) */
+
+    let sqlChange = `CALL as_sp_updatePassUser(`;
+    sqlChange += `${ body.pkUser }, `;
+    sqlChange += `'${ bcrypt.hashSync( body.password, 10 ) }', `;
+    sqlChange += `${ pkUserToken }, `;
+    sqlChange += `'${ reqIp.getClientIp( req ) }'`;
+    sqlChange += `);`;
+
+    MysqlCnn.onExecuteQuery( sqlChange, (error: any, data: any[]) => {
+
+        if (error) { 
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    });
+
 });
 
 //cu_sp_updateProfileClient

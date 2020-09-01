@@ -396,7 +396,9 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
         const payloadPosition = { 
                                     pkUser: user.pkUser,
                                     coords: payload,
-                                    occupied: user.occupied 
+                                    occupied: user.occupied ,
+                                    nameComplete: user.nameComplete,
+                                    codeCategory: user.category
                                 };
         if (user.pkUser !== 0 ) {            
             io.in('WEB').emit('current-position-driver', payloadPosition);
@@ -674,7 +676,7 @@ function onAddPanic( pkService: number, fkPerson: number, fkUser: number
                         reject( {ok: false, error: errorNotify} );
                     }
 
-                    io.in( 'WEB' ).emit('new-alert-service', { url });
+                    io.in( 'WEB' ).emit('new-alert-service', { url, msg });
 
                     resolve({ 
                         ok: true, 
