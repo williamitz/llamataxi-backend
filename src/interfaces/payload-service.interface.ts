@@ -20,3 +20,12 @@ export interface IPayloadDel {
     pkUser: number;
     msg: string;
 }
+
+export interface IPayloadTravel {
+    runOrigin: boolean;
+    finishOrigin: boolean;
+    runDestination: boolean;
+    finishDestination: boolean;
+    pkClient: number;
+    pkService: number;
+}

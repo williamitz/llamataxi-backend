@@ -8,7 +8,7 @@ import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
 import { IOffer } from '../interfaces/offer.interface';
-import { IWatchGeo, IPayloadServiceNew, IPayloadDel } from '../interfaces/payload-service.interface';
+import { IWatchGeo, IPayloadServiceNew, IPayloadDel, IPayloadTravel } from '../interfaces/payload-service.interface';
 import { IPanic } from '../interfaces/body_panic.interface';
 import Cryptr from 'cryptr';
 import { ENCRYPT_KEY, TWILIO_ID, TWILIO_TOKEN, TWILIO_PHONE } from '../global/environments.global';
@@ -551,7 +551,7 @@ export const currentPositionService = ( client: Socket, io: SocketIO.Server ) =>
 
 export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
 
-    client.on('status-travel-driver', (payload: any, callback: Function) => {
+    client.on('status-travel-driver', (payload: IPayloadTravel, callback: Function) => {
         const clientSocket = listUser.onFindUserForPk( payload.pkClient );
 
         if (clientSocket.pkUser === 0) {
@@ -862,11 +862,13 @@ function onUpdateOccupied( pkUser: number, occupied: boolean ): Promise<IRespons
     });
 }
 
-function onUpdateTravelService( payload: any, pkUser: number ): Promise<IResponse> {
+function onUpdateTravelService( payload: IPayloadTravel, pkUser: number ): Promise<IResponse> {
     return new Promise( (resolve, reject) => {
 
         let sql = `CALL ts_sp_updateTravelService( `;
         sql += `${ payload.pkService }, `;
+        sql += `${ payload.runOrigin }, `;
+        sql += `${ payload.finishOrigin }, `;
         sql += `${ payload.runDestination }, `;
         sql += `${ payload.finishDestination }, `;
         sql += `${ pkUser }`;
