@@ -15,19 +15,24 @@ JournalRouter.get("/Journal/Get", [verifyToken], (req: Request, res: Response) =
   let sql = `CALL cc_sp_getListJournal(${showInactive});`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
-        error,
+        error
       });
     }
+
     res.json({
       ok: true,
       data: data,
-      total: data.length,
+      total: data.length
     });
+
   });
+
 });
+
 JournalRouter.get("/Journal/GetAll", [verifyToken], (req: Request, res: Response) => {
 
   let sql = `CALL cc_sp_getListJournalAll();`;

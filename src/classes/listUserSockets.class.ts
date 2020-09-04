@@ -182,6 +182,7 @@ export class ListUserSockets {
 
     onFindUserForPk( pk: number ): UserSocket {
         const finded =  this.listUser.find( u => u.pkUser === pk );
+        // console.log('list user', finded);
         if (!finded) {
             return{
                 id: '',

@@ -29,3 +29,8 @@ export interface IPayloadTravel {
     pkClient: number;
     pkService: number;
 }
+
+
+export interface IPayloadChat {
+    pkUser: number;
+}

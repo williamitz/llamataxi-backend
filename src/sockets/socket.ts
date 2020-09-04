@@ -8,7 +8,7 @@ import { INotifySocket } from '../interfaces/body_notify_socket.interface';
 import h3 from 'h3-js';
 import { UserSocket } from '../classes/userSocket.class';
 import { IOffer } from '../interfaces/offer.interface';
-import { IWatchGeo, IPayloadServiceNew, IPayloadDel, IPayloadTravel } from '../interfaces/payload-service.interface';
+import { IWatchGeo, IPayloadServiceNew, IPayloadDel, IPayloadTravel, IPayloadChat } from '../interfaces/payload-service.interface';
 import { IPanic } from '../interfaces/body_panic.interface';
 import Cryptr from 'cryptr';
 import { ENCRYPT_KEY, TWILIO_ID, TWILIO_TOKEN, TWILIO_PHONE } from '../global/environments.global';
@@ -580,6 +580,24 @@ export const statusTravelDriver = ( client: Socket, io: SocketIO.Server ) => {
             });
         });
 
+    });
+};
+
+// chat cliente-conductor
+export const newChatMessage = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('new-message-service', (payload: IPayloadChat, callback: Function) => {
+
+        const clientSocket = listUser.onFindUserForPk( payload.pkUser );
+        console.log(`usuario encontrado ${ payload.pkUser }`, clientSocket);
+        if (clientSocket.pkUser !== 0) {
+            io.in( clientSocket.id ).emit( 'new-chat-message', {} );
+        }
+
+        callback({
+            ok: true,
+            message: 'Notificación enviada'
+        });
+        
     });
 };
 

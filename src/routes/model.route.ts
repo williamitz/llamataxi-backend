@@ -8,15 +8,23 @@ let ModelRouter = Router();
 let MysqlCon = MysqlClass.instance;
 
 ModelRouter.get("/Model/Get", [verifyToken], (req: Request, res: Response) => {
+
   let page = req.query.page || 1;
-  let fkCategory = req.query.fkCategory || 0;
-  let fkBrand = req.query.fkBrand || 0;
-  let nameModel = req.query.nameModel || "";
+  let qCategory = req.query.qCategory || '';
+  let qBrand = req.query.qBrand || '';
+  let qModel = req.query.qModel || "";
   let showInactive = req.query.showInactive || true;
 
-  let sql = `CALL as_sp_getListModel(${page},'${fkCategory}', '${fkBrand}', '${nameModel}', ${showInactive});`;
+  let sql = `CALL as_sp_getListModel(`;
+
+  sql += `${page}, `;
+  sql += `'${qCategory}', `;
+  sql += `'${qBrand}', `;
+  sql += `'${qModel}',`;
+  sql += `${showInactive});`;
 
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
     if (error) {
       return res.status(400).json({
         ok: false,
@@ -24,11 +32,17 @@ ModelRouter.get("/Model/Get", [verifyToken], (req: Request, res: Response) => {
       });
     }
 
-    let sqlOverall = `CALL as_sp_overallPageModel('${fkCategory}', '${fkBrand}', '${nameModel}',${showInactive});`;
+    let sqlOverall = `CALL as_sp_overallPageModel(`; 
+    sqlOverall += `'${qCategory}', `;
+    sqlOverall += `'${qBrand}', `;
+    sqlOverall += `'${qModel}', `;
+    sqlOverall += `${showInactive} );`;
+
+    console.log(sqlOverall);
 
     MysqlCon.onExecuteQuery( sqlOverall, (errorOverall: any, dataOverall: any[]) => {
 
-        if (errorOverall) {
+        if ( errorOverall ) {
           return res.status(400).json({
             ok: false,
             error: errorOverall,
@@ -41,9 +55,10 @@ ModelRouter.get("/Model/Get", [verifyToken], (req: Request, res: Response) => {
           total: dataOverall[0].total,
         });
 
-      }
-    );
+    });
+
   });
+
 });
 
 ModelRouter.get("/Model/GetAll", [verifyToken], (req: Request, res: Response) => {

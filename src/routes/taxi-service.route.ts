@@ -542,6 +542,7 @@ TServiceRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any
 TServiceRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     // let fkUser = req.userData.pkUser || 0;
     let body = req.body;
+    let nameUser = req.userData.nameComplete || '';
 
     let sql = `CALL ts_sp_declineOfferDriver(`;
     sql += `${ body.pkOffer }, `;
@@ -557,6 +558,23 @@ TServiceRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (r
                 ok: false,
                 error
             });
+        }
+
+        if (data[0].showError === 0) {
+            // obtener el padre de la ubicación dada en un radio mas grande
+            const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
+            
+            // extraer los indices hijos de un pentágono con radio 6 del indice padre
+            const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
+            const msg = `${ nameUser }, ha cancelado el servicio.`;
+            // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+            indexChildren.forEach( indexHex => {
+                Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
+            });
+
+            // notificar al panel que se eliminó un servicio
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            Server.io.in( 'WEB' ).emit( 'current-del-service', {} );
         }
 
         res.json({

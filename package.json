@@ -1,6 +1,6 @@
 {
     "name": "viernes",
-    "version": "1.1.2",
+    "version": "1.1.3",
     "description": "Backend para app movil y app web",
     "main": "index.js",
     "scripts": {

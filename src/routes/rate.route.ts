@@ -14,7 +14,13 @@ RateRouter.get("/Rate/Get", [verifyToken], (req: Request, res: Response) => {
   let qJournal = req.query.qJournal || ""; 
 
   let showInactive = req.query.showInactive || true;
-  let sql = `CALL cc_sp_getListRate(${page}, '${qCategory}', '${ qJournal }', ${showInactive});`;
+
+  let sql = `CALL cc_sp_getListRate(`;
+  sql += `${page}, `;
+  sql += `'${qCategory}', `;
+  sql += `'${ qJournal }', `;
+  sql += `${showInactive} );`;
+
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
       return res.status(400).json({
@@ -22,7 +28,11 @@ RateRouter.get("/Rate/Get", [verifyToken], (req: Request, res: Response) => {
         error,
       });
     }
-    let sqlOverall = `CALL cc_sp_overallPageRate( '${qCategory}', '${ qJournal }', ${showInactive});`;
+
+    let sqlOverall = `CALL cc_sp_overallPageRate( `;
+    sqlOverall += `'${qCategory}', `;
+    sqlOverall += `'${ qJournal }', `;
+    sqlOverall += `${showInactive} );`;
 
     MysqlCon.onExecuteQuery(sqlOverall, (errorOverall: any, dataOverall: any[]) => {
         if (errorOverall) {
@@ -64,6 +74,7 @@ RateRouter.get("/Rate/GetAll", [verifyToken], (req: Request, res: Response) => {
   });
 
 });
+
 RateRouter.post("/Rate/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyRate = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;

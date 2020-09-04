@@ -63,6 +63,7 @@ export default class MainServer {
             mainSocket.currentPositionService( client, this.io );
             mainSocket.statusTravelDriver( client, this.io );
             mainSocket.travelPanic( client, this.io );
+            mainSocket.newChatMessage( client, this.io );
             
             
         });
