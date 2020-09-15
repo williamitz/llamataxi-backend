@@ -3,8 +3,12 @@ import MysqlClass from "./../classes/mysqlConnect.class";
 import reqIp from "request-ip";
 import { verifyToken } from '../middlewares/token.mdd';
 import { IMessage } from '../interfaces/body_message.interface';
+import MainServer from '../classes/mainServer.class';
+import { ListUserSockets } from "../classes/listUserSockets.class";
 
 let MessageRouter = Router();
+let mainServer = MainServer.instance;
+let listUser = ListUserSockets.instance;
 
 let MysqlCon = MysqlClass.instance;
 
@@ -12,14 +16,24 @@ MessageRouter.post('/Message/Add', [verifyToken], (req: any, res: Response) => {
     let body: IMessage = req.body;
     let fkUser = req.userData.pkUser || 0;
 
-    let sql = `CALL as_sp_addMessage( ${fkUser}, ${body.fkUserReceptor}, '${body.subject}', '${ body.message }', '${ body.tags }',  ${fkUser}, '${reqIp.getClientIp(req)}' );`;
+    let sql = `CALL as_sp_addMessage(`;
+    sql += `${fkUser}, `;
+    sql += `${body.fkUserReceptor}, `;
+    sql += `'${body.subject}', `;
+    sql += `'${ body.message }', `;
+    sql += `'${ body.tags }',  `;
+    sql += `${fkUser}, `;
+    sql += `'${reqIp.getClientIp(req)}' );`;
     
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
         if (error) {
+
           return res.status(400).json({
             ok: false,
             error,
           });
+          
         }
     
         res.json({
@@ -49,7 +63,11 @@ MessageRouter.get('/Message/Get', [verifyToken], (req: Request, res: Response) =
         });
     }
 
-    let sql = `CALL as_sp_getListMessages( ${ pkUser }, ${ page }, ${ rowsForPage }, ${showInactive} );`;
+    let sql = `CALL as_sp_getListMessages(`;
+    sql += `${ pkUser }, `;
+    sql += `${ page }, `;
+    sql += `${ rowsForPage }, `;
+    sql += `${showInactive} );`;
     
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
         if (error) {
@@ -77,24 +95,29 @@ MessageRouter.get('/Message/Get', [verifyToken], (req: Request, res: Response) =
     });
 });
 
-MessageRouter.get('/Message/Get/Response/:id', [verifyToken], (req: Request, res: Response) => {
+MessageRouter.get('/Message/Get/Response/:id', [verifyToken], (req: any, res: Response) => {
 
   let pkMessage = req.params.id || 0;
+  let fkUser = req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_getListResponses( ${ pkMessage } );`;
+  let sql = `CALL as_sp_getListResponses( ${ pkMessage }, ${ fkUser } );`;
   
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
-      if (error) {
-        return res.status(400).json({
-          ok: false,
-          error,
-        });
-      }
 
-      res.json({
-        ok: true,
-        data
+    if (error) {
+
+      return res.status(400).json({
+        ok: false,
+        error
       });
+      
+    }
+
+    res.json({
+      ok: true,
+      data
+    });
+      
   });
 });
 
@@ -102,7 +125,13 @@ MessageRouter.post('/Message/Add/Response', [verifyToken], (req: any, res: Respo
   let body: IMessage = req.body;
   let fkUser = req.userData.pkUser || 0;
 
-  let sql = `CALL as_sp_addResponseMsg( ${ body.pkMessage }, ${fkUser}, ${body.fkUserReceptor}, '${ body.message }',  ${fkUser}, '${reqIp.getClientIp(req)}' );`;
+  let sql = `CALL as_sp_addResponseMsg( `;
+  sql += `${ body.pkMessage }, `;
+  sql += `${fkUser}, `;
+  sql += `${body.fkUserReceptor}, `;
+  sql += `'${ body.message }',  `;
+  sql += `${fkUser}, `;
+  sql += `'${reqIp.getClientIp(req)}' );`;
   
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
       if (error) {
@@ -121,5 +150,66 @@ MessageRouter.post('/Message/Add/Response', [verifyToken], (req: any, res: Respo
   });
 });
 
+MessageRouter.get( '/Message/Total', [verifyToken], ( req: any, res: Response ) => {
+  
+  let fkUser = req.userData.pkUser || 0;
+  
+  let sql = `CALL as_sp_getTotalMsg( ${ fkUser } ); `;
+
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+    if (error) {
+
+      return res.status(400).json({
+        ok: false,
+        error
+      });
+
+    }
+
+    res.json({
+      ok: true,
+      data: data[0]
+    });
+
+});
+
+});
+
+MessageRouter.put('/Message/Readed/:id', [verifyToken], (req: any, res: Response) => {
+
+  let fkUser = req.userData.pkUser || 0;
+  let pkMessage = req.params.id || 0;
+
+  let sql = `CALL as_sp_updateReadedMsg( `;
+  sql += `${ pkMessage }, `;
+  sql += `${ fkUser }, `;
+  sql += `'${ reqIp.getClientIp(req)}' );`;
+  
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+      if (error) {
+        return res.status(400).json({
+          ok: false,
+          error,
+        });
+      }
+
+      if ( data[0].showError === 0 ) {
+        const userSocket = listUser.onFindUserForPk( fkUser );
+        if (userSocket.pkUser !== 0) {
+          mainServer.io.in( userSocket.id ).emit('readed-msg', {});
+        }
+      }
+  
+      res.json({
+        ok: true,
+        showError: data[0].showError,
+        data: data[0],
+      });
+  
+  });
+
+});
 
 export default MessageRouter;

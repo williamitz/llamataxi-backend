@@ -64,7 +64,10 @@ export default class MainServer {
             mainSocket.statusTravelDriver( client, this.io );
             mainSocket.travelPanic( client, this.io );
             mainSocket.newChatMessage( client, this.io );
-            
+            mainSocket.sendMsgPanel( client, this.io );
+            mainSocket.responseMsgPanel( client, this.io );
+            mainSocket.responseMsgApp( client, this.io );
+            mainSocket.changePlayGeo( client, this.io );
             
         });
     }

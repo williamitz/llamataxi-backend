@@ -61,6 +61,9 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         });
         
         io.to('WEB').emit('user-connect', { pkUser: payload.pkUser });
+        
+        io.in( client.id ).emit('sing-success', { ok: true, message: 'Socket congigurado' } );
+
         console.log('clientes configurados', listUser.onGetUsers());
         onSingSocketDB(payload.pkUser, payload.osID, true).then( (resSql) => {
 
@@ -147,10 +150,16 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
 export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
     client.on('disconnect', (payload, callback: Function) => {
         const userDelete = listUser.onDeleteUser( client.id );
-
+        console.log('Usuario desconectado', userDelete.id);
         client.leave( userDelete.device, (err: any) => {
             if (err) {
-                console.error('Ocurrio un error al eliminar usuario de la sala');
+                console.error('Ocurrio un error al eliminar usuario de la sala', userDelete.device);
+            }
+        });
+
+        client.leave( userDelete.role, (err: any) => {
+            if (err) {
+                console.error('Ocurrio un error al eliminar usuario de la sala', userDelete.role);
             }
         });
     });
@@ -178,6 +187,46 @@ export const serviceDelRun = ( client: Socket, io: SocketIO.Server ) => {
 
     });
     
+}
+
+export const changePlayGeo = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('change-play-geo', ( payload: any, callback: Function ) => {
+        const userIO = listUser.onFindUser( client.id );
+        
+        if (userIO.pkUser === 0) {
+            return callback({
+                ok: false,
+                error: {
+                    message: 'Usuario socket no authenticado'
+                }
+            });
+        }
+        
+        const ok = listUser.onChangePlayGeo( client.id, payload.value );
+        if (!payload.value) {            
+            io.in('WEB').emit('driver-off', { pkUser: userIO.pkUser });
+            io.in('CLIENT_ROLE').emit('driver-off', { pkUser: userIO.pkUser });
+        }
+        
+        onUpdatePlayGeo( userIO.pkUser, payload.value ).then( (res) => {
+
+            callback({
+                ok,
+                message: 'Se cambió el estado geo con éxito' + payload.value
+            });
+
+        }).catch(e => {
+            
+            console.error('Error al actualizar playGeo');
+            callback({
+                ok: false,
+                message: 'Error al actualizar playGeo'
+            });
+
+        });
+        
+
+    });
 }
 
 // notificando a conductores de acuerdo a su categoría 
@@ -243,15 +292,7 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
 
                 break;
-        
-            default:                
-                // notificamos a todos los conductores en los pentagonos hijos
-                indexChildren.forEach( indexHexChildren => {
-                    io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
-                });
-                driverNotify = drivers;
 
-                break;
             }
             
             let response = {
@@ -344,6 +385,9 @@ export const sendNotify = (client: Socket, io: SocketIO.Server) => {
 export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
 
     client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
+        
+        console.log('Recibiendo soket app driver', payload);
+
         const user = listUser.onFindUser( client.id );
         const oldIndex = user.indexHex;
         const oldCategory = user.category;
@@ -400,35 +444,46 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
                                     nameComplete: user.nameComplete,
                                     codeCategory: user.category
                                 };
-        if (user.pkUser !== 0 ) {            
+        if (user.pkUser !== 0 && user.playGeo ) {            
             io.in('WEB').emit('current-position-driver', payloadPosition);
-        }
-
-        // emitiendo coords a clientes vecinos
-        const arrChildren: string[] = h3.kRing( indexHex , 1);
-        arrChildren.forEach( (indexChildren) => {
-            const roomClient = `${ indexChildren }-client`;
-            io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
-        });
-        
-        onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
-            
-            // notificar a clients cercanos a la ubicación, y al panel web
-            callback({
-                ok: true,
-                message: `Se actualizo coordenadas, pendiente notificar ${ roomIndex } - ${ roomIndexCategory }`,
-                indexHex: roomIndex,
-                data: resSql.data
+            // emitiendo coords a clientes vecinos
+            const arrChildren: string[] = h3.kRing( indexHex , 1);
+            arrChildren.forEach( (indexChildren) => {
+                const roomClient = `${ indexChildren }-client`;
+                io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
             });
 
-        }).catch(e => {
-            console.error('Error al actualizar coordenadas', e);
+            onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
+                
+                // notificar a clients cercanos a la ubicación, y al panel web
+                callback({
+                    ok: true,
+                    message: `Se actualizo coordenadas, pendiente notificar ${ roomIndex } - ${ roomIndexCategory }`,
+                    indexHex: roomIndex,
+                    data: resSql.data
+                });
+    
+            }).catch(e => {
+                console.error('Error al actualizar coordenadas', e);
+                callback({
+                    ok: false,
+                    error: e,
+                    message: `Error al actualizar coordenadas`
+                });
+            });
+
+        } else {
             callback({
                 ok: false,
-                error: e,
-                message: `Error al actualizar coordenadas`
+                error: {
+                    message: `Conductor no activo su ubicación`
+                },
+                message: `Conductor no activo su ubicación`
             });
-        });
+
+        }
+
+        
     });
 
 };
@@ -655,6 +710,91 @@ export const travelPanic = ( client: Socket, io: SocketIO.Server ) => {
     });
 };
 
+// escuchar cuando el panel envía un mensaje a un usuario
+
+export const sendMsgPanel = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('send-msg-web', ( payload: any, callback: Function ) => {
+        const userReceptor = listUser.onFindUserForPk( Number( payload.pkReceptor ) );
+
+        if (userReceptor.pkUser === 0) {
+            return callback({
+                ok: false,
+                message: 'Usuario receptor no conectado' + payload.pkReceptor
+            });
+        }
+        console.log('payload new msg', payload);
+        io.in( userReceptor.id ).emit('new-msg', payload);
+
+        callback({
+            ok: true,
+            message: 'Usuario receptor notificado con éxito'
+        });
+    });
+};
+
+// new-response-to-panel
+export const responseMsgPanel = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('new-response-to-panel', ( payload: any, callback: Function ) => {
+
+        io.in( 'WEB' ).emit('new-response-msg', payload);
+
+        callback({
+            ok: true,
+            message: 'Usuarios web notifiados con éxito'
+        });
+    });
+};
+
+// new-response-to-app
+export const responseMsgApp = ( client: Socket, io: SocketIO.Server ) => {
+    client.on('new-response-to-app', ( payload: any, callback: Function ) => {
+
+        const userReceptor = listUser.onFindUserForPk( Number( payload.pkReceptor ) );
+
+        if (userReceptor.pkUser === 0) {
+            return callback({
+                ok: false,
+                message: 'Usuario receptor no conectado' + payload.pkReceptor
+            });
+        }
+        // console.log('payload new msg', payload);
+        io.in( userReceptor.id ).emit('new-response-msg', payload);
+
+        callback({
+            ok: true,
+            message: 'Usuario receptor notificado con éxito'
+        });
+    });
+};
+
+function onUpdatePlayGeo( pkUser: number, value: boolean ) {
+
+    return new Promise( (resolve, reject)  => {
+        let sql = `CALL as_sp_updatePlayGeo(`;
+        sql += `${ pkUser }, `;
+        sql += `${ value } );`;
+    
+        mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+            if (error) {                
+                reject( {ok: false, error} );
+            }
+
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            resolve({ 
+                ok: true, 
+                data: json[0],
+                showError: json[0].showError,
+                message: onGetErrorGeo( json[0].showError ) 
+            });
+
+        });
+    });
+    
+}
+
 function onAddPanic( pkService: number, fkPerson: number, fkUser: number
                         , msg: string, lat: number
                         , lng: number, isClient: boolean, io: SocketIO.Server ) {
@@ -718,6 +858,16 @@ function onAddPanic( pkService: number, fkPerson: number, fkUser: number
 
 }
 
+function onGetErrorGeo( showError: number ): string {
+    let arrErr = showError === 0 ? ['Se notificó alerta con éxito'] : ['Error'];
+
+    if (showError & 1) {
+        arrErr.push('No se encontró usuario');
+    }
+
+    return arrErr.join(', ');
+};
+
 function onGetError( showError: number ): string {
     let arrErr = showError === 0 ? ['Se notificó alerta con éxito'] : ['Error'];
 
@@ -778,7 +928,15 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
                 
                 let userOfline = dataOf[0];
 
-                sqlNoty = `CALL as_sp_addNotification( ${ userIO.pkUser }, ${userOfline.pkUser}, '${payload.title}', '${payload.subtitle}', '${payload.message}', '${ payload.urlShow }', ${ userIO.pkUser }, '127:0:0:0' );`;
+                sqlNoty = `CALL as_sp_addNotification( `;
+                sqlNoty += `${ userIO.pkUser }, `;
+                sqlNoty += `${userOfline.pkUser}, `;
+                sqlNoty += `'${payload.title}', `;
+                sqlNoty += `'${payload.subtitle}', `;
+                sqlNoty += `'${payload.message}', `;
+                sqlNoty += `'${ payload.urlShow }', `;
+                sqlNoty += `${ userIO.pkUser }, `;
+                sqlNoty += `'127:0:0:0' );`;
 
                 mysqlCnn.onExecuteQuery(sqlNoty, (error: any, data: any[]) => {
       
@@ -799,7 +957,15 @@ function onAddNotify( id: string, payload: INotifySocket ): Promise<IResponse> {
             });
         } else {
             
-            sqlNoty = `CALL as_sp_addNotification( ${ userIO.pkUser || 0 }, ${userAT.pkUser}, '${payload.title}', '${payload.subtitle}', '${payload.message}', '${ payload.urlShow }', ${ userIO.pkUser }, '127:0:0:0' );`;
+            sqlNoty = `CALL as_sp_addNotification( `;
+            sqlNoty += `${ userIO.pkUser || 0 }, `;
+            sqlNoty += `${userAT.pkUser}, `;
+            sqlNoty += `'${payload.title}', `;
+            sqlNoty += `'${payload.subtitle}', `;
+            sqlNoty += `'${payload.message}', `;
+            sqlNoty += `'${ payload.urlShow }', `;
+            sqlNoty += `${ userIO.pkUser }, `;
+            sqlNoty += `'127:0:0:0' );`;
 
             mysqlCnn.onExecuteQuery(sqlNoty, (error: any, data: any[]) => {
       

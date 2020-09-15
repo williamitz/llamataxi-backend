@@ -42,6 +42,7 @@ export class ListUserSockets {
                 coords: {lat: 0, lng: 0},
                 onUpdateCoords() { return ''; },
                 occupied: false,
+                playGeo: false
                 // onUpdateCategory() { return false }
             };
         }
@@ -106,6 +107,18 @@ export class ListUserSockets {
         return true;
     }
 
+    onChangePlayGeo( id: string, value: boolean ) {
+        const finded = this.listUser.find( user => user.id === id  );
+        if (!finded) {
+            console.error('No se encontró usuario socket');
+            return false;
+        }
+
+        finded.playGeo = value;
+        
+        return true;
+    }
+
     onGetAdminSort( role: string ) {
         let usersAdmin = this.listUser.filter( user => user.role === role );
         let newArr: UserSocket[] = [];
@@ -164,6 +177,7 @@ export class ListUserSockets {
                 coords: {lat: 0, lng: 0},
                 occupied: false,
                 onUpdateCoords() { return ''; },
+                playGeo: false
                 // onUpdateCategory() { return false }
             };
         }
@@ -199,6 +213,7 @@ export class ListUserSockets {
                 coords: {lat: 0, lng: 0},
                 occupied: false,
                 onUpdateCoords() { return ''; },
+                playGeo: false
                 // onUpdateCategory() { return false }
             };
         }
@@ -208,7 +223,7 @@ export class ListUserSockets {
 
     onFindDriversHex( hex: string ): UserSocket[] {
         // && user.category === category 
-        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false && user.pkUser !== 0 );
+        return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false && user.playGeo === true );
     }
 
     onUpdateTime( id: string ) {
