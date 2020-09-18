@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import MainRouter from './routes/main.route';
 import MainServer from './classes/mainServer.class';
-import MysqlClass from './classes/mysqlConnect.class';
 const server = MainServer.instance;
 import  bcrypt from 'bcrypt';
 // import h3 from 'h3-js';
@@ -25,7 +24,8 @@ server.onRun( (error: any) => {
     if (error) return console.log('Error al levantar servidor, revise dependencias  :(');
 
     console.log(`Servidor corriendo en puerto : ${ server.port }`);
-    MysqlClass.instance;
+    server.loadJournal();
+    server.loadPercentRate();
     
 });
 

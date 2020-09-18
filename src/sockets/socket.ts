@@ -386,7 +386,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
 
     client.on('current-position-driver', (payload: IUserCoords, callback: Function ) => {
         
-        console.log('Recibiendo soket app driver', payload);
+        // console.log('Recibiendo soket app driver', payload);
 
         const user = listUser.onFindUser( client.id );
         const oldIndex = user.indexHex;
@@ -456,7 +456,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
             onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
                 
                 // notificar a clients cercanos a la ubicación, y al panel web
-                callback({
+                return callback({
                     ok: true,
                     message: `Se actualizo coordenadas, pendiente notificar ${ roomIndex } - ${ roomIndexCategory }`,
                     indexHex: roomIndex,
@@ -465,7 +465,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
     
             }).catch(e => {
                 console.error('Error al actualizar coordenadas', e);
-                callback({
+                return callback({
                     ok: false,
                     error: e,
                     message: `Error al actualizar coordenadas`

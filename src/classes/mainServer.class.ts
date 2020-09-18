@@ -87,7 +87,7 @@ export default class MainServer {
 
     }
 
-    private loadPercentRate() {
+    public loadPercentRate() {
         MysqlCon.onExecuteQuery('CALL ts_sp_getPercentRate();', (error: any, data: any[]) => {
             if (error) {
                 return console.log('Error en base de datos al listar el porcentaje de tarifa', error);
@@ -202,10 +202,14 @@ export default class MainServer {
     onRun( callback: Function ) {
         this._httpServer.listen( this.port, callback() );
         this.loadPublic();
-        this.loadJournal();
-        // this.listenJournal();
-        this.loadPercentRate();
-    }
 
+    //     setTimeout(() => {
+            
+    //         this.loadJournal();
+    //         // this.listenJournal();
+    //         this.loadPercentRate();
+    //     }, 5000);
+    // }
+    }
 
 }

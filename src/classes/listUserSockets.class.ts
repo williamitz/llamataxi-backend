@@ -103,6 +103,7 @@ export class ListUserSockets {
         finded.device = '';
         finded.osID = '';
         finded.occupied = false;
+        finded.playGeo = false;
         
         return true;
     }
