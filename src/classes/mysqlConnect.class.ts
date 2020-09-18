@@ -14,7 +14,9 @@ export default class MysqlClass {
             host: HOST_DB,
             user: USER_DB,
             password: PASSWORD_DB,
-            database: NAME_DB
+            database: NAME_DB,
+            charset: 'utf8mb4',
+            
         });
         this.onConnect();
     }
@@ -24,6 +26,7 @@ export default class MysqlClass {
     }
     
     private onConnect() {
+        
         this.connectDB.connect( (error: any) => {
             if (error ) {
                 return console.error("Error de conexión con base de datos ===> ", error);                
