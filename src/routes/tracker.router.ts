@@ -17,7 +17,7 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
     let body: ITracker = req.body;
     let fkUser = req.userData.pkUser || 0;
 
-    console.log('Recibiendo post app driver', body);
+    console.log('Recibiendo tracker post', body);
 
     const user = listUser.onFindUserForPk( fkUser );
     const indexHex = user.onUpdateCoords( body.lat, body.lng, mainServer.radiusPentagon );
