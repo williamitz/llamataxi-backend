@@ -88,13 +88,16 @@ UserRouter.get( '/User/Get', [verifyToken, verifyWebmasterRole], (req: Request, 
             });
         }
         
-        let sqlOverall = `CALL as_sp_overallPageUser('${ qName }', `;
+        let sqlOverall = `CALL as_sp_overallPageUser(`;
+        sqlOverall += `'${ qName }', `;
         sqlOverall += `'${ qEmail }', `;
         sqlOverall += `'${ qUser }', `;
         sqlOverall += `'${ qRole }', `;
         sqlOverall += `${ qVerified }, `;
         sqlOverall += `${ qConnect }, `;
         sqlOverall += `${ showInactive });`;
+
+        console.log('sql overall', sqlOverall);
 
         MysqlCnn.onExecuteQuery( sqlOverall, (errorOverall: any, dataOverall: any[]) => {
             if (errorOverall) {
