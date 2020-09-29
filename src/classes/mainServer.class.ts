@@ -51,23 +51,23 @@ export default class MainServer {
             mainSocket.connectUser( client );
             mainSocket.disconnectUser( client, this.io );
             mainSocket.singUser( client, this.io  );
-            mainSocket.logoutUser( client, this.io );
+            mainSocket.logoutUser( client, this.io, this.radiusPather, this.radiusPentagon );
             mainSocket.sendNotify( client, this.io );
             mainSocket.currentPosDriver( client, this.io, this.radiusPentagon );
-            mainSocket.currentPosClient( client, this.radiusPentagon );
+            mainSocket.currentPosClient( client, this.io, this.radiusPentagon );
             mainSocket.newService( client, this.io, this.radiusPentagon, this.radiusPather );
             mainSocket.configCategoryUser( client );
             mainSocket.newOfferDriver( client, this.io );
             mainSocket.newOfferClient( client, this.io );
             mainSocket.changeOccupiedDriver( client );
-            mainSocket.currentPositionService( client, this.io );
+            mainSocket.currentPositionService( client, this.io, this.radiusPentagon );
             mainSocket.statusTravelDriver( client, this.io );
             mainSocket.travelPanic( client, this.io );
             mainSocket.newChatMessage( client, this.io );
             mainSocket.sendMsgPanel( client, this.io );
             mainSocket.responseMsgPanel( client, this.io );
             mainSocket.responseMsgApp( client, this.io );
-            mainSocket.changePlayGeo( client, this.io );
+            mainSocket.changePlayGeo( client, this.io, this.radiusPather, this.radiusPentagon );
             
         });
     }

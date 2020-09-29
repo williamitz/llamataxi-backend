@@ -17,12 +17,12 @@ import MessageRouter from './message.route';
 
 import JournalRouter from './journal.route';
 import RateRouter from './rate.route';
-import TServiceRouter from './taxi-service.route';
 import osRouter from "./oneSignal.route";
 import UtilRoutes from './utilities.route';
 import ChartsRouter from "./charts.rotes";
 import ContactRouter from "./contacts.route";
 import TrackerRouter from "./tracker.router";
+import TaxiRouter from './taxi-service.route';
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -41,7 +41,7 @@ MainRouter.use(FilesRouter);
 MainRouter.use(DriverRoutes);
 MainRouter.use(MessageRouter);
 
-MainRouter.use( TServiceRouter )
+MainRouter.use( TaxiRouter )
 
 MainRouter.use(JournalRouter);
 MainRouter.use(RateRouter);
@@ -51,6 +51,5 @@ MainRouter.use( UtilRoutes );
 MainRouter.use( ChartsRouter );
 MainRouter.use( ContactRouter );
 MainRouter.use( TrackerRouter );
-
 
 export default MainRouter;

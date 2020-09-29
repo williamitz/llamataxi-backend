@@ -8,13 +8,13 @@ import h3 from "h3-js";
 import { ListUserSockets } from '../classes/listUserSockets.class';
 import { UserSocket } from '../classes/userSocket.class';
 
-let TServiceRouter = Router();
+let TaxiRouter = Router();
 
 let Server = MainServer.instance;
 let Users = ListUserSockets.instance;
 let MysqlCon = MysqlClass.instance;
 
-TServiceRouter.get('/Journal/GetForHour', [verifyToken], (req: Request, res: Response) => {
+TaxiRouter.get('/Journal/GetForHour', [verifyToken], (req: Request, res: Response) => {
     
     const data = Server.getJournal();
     if (data.pkJournal === 0) {
@@ -33,7 +33,7 @@ TServiceRouter.get('/Journal/GetForHour', [verifyToken], (req: Request, res: Res
                   
 });
 
-TServiceRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Response) => {
+TaxiRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Response) => {
     
     const data = Server.getJournal();
     if (data.pkJournal === 0) {
@@ -64,7 +64,7 @@ TServiceRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Res
                   
 });
 
-TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     let body: IBodyService = req.body;
     let fkUser = req.userData.pkUser || 0;
     
@@ -107,15 +107,6 @@ TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, 
             });
         }
 
-        // enviar notificación a conductores cercanos
-        // const drivers: UserSocket[] =  Users.onGetDriverHex(indexHex);
-
-        // if (drivers.length > 0) {
-        //     drivers.forEach( driver => {
-        //         Server.io.to( driver.id ).emit('new-service', {data: data[0]});
-        //     });
-        // }
-
         if (data[0].showError === 0) {
             // si todo se hizo correctamente notificamos al panel un nuevo tráfico
             Server.io.in( 'WEB' ).emit( 'current-new-service', {pkservice: data[0].pkService} )
@@ -130,7 +121,7 @@ TServiceRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, 
     });
 });
 
-TServiceRouter.get('/Culqui/Key', [verifyToken], (req: any, res: Response) => {
+TaxiRouter.get('/Culqui/Key', [verifyToken], (req: any, res: Response) => {
     
     let sql = `CALL cc_sp_getCulquiKey();`;
 
@@ -149,7 +140,7 @@ TServiceRouter.get('/Culqui/Key', [verifyToken], (req: any, res: Response) => {
     });
 });
 
-TServiceRouter.get('/PercentRate', [verifyToken], (req: Request, res: Response) => {
+TaxiRouter.get('/PercentRate', [verifyToken], (req: Request, res: Response) => {
     
     res.json({
         ok: true,
@@ -158,7 +149,7 @@ TServiceRouter.get('/PercentRate', [verifyToken], (req: Request, res: Response) 
 
 });
 
-TServiceRouter.get('/Services/Driver', [verifyToken, verifyDriverRole], (req: any, res: Response ) => {
+TaxiRouter.get('/Services/Driver', [verifyToken, verifyDriverRole], (req: any, res: Response ) => {
     
     let page = req.query.page || 1;
     let fkUser = req.userData.pkUser || 0;
@@ -197,7 +188,7 @@ TServiceRouter.get('/Services/Driver', [verifyToken, verifyDriverRole], (req: an
 
 });
 
-TServiceRouter.get('/Services/Driver/Total', [verifyToken, verifyDriverRole], (req: any, res: Response ) => {
+TaxiRouter.get('/Services/Driver/Total', [verifyToken, verifyDriverRole], (req: any, res: Response ) => {
 
     let fkUser = req.userData.pkUser || 0;
 
@@ -220,7 +211,7 @@ TServiceRouter.get('/Services/Driver/Total', [verifyToken, verifyDriverRole], (r
     });
 });
 
-TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+TaxiRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
     
     let fkUser = req.userData.pkUser || 0;
     // mostrarle al conductor la demanda que existe en su poligono padre
@@ -277,7 +268,7 @@ TServiceRouter.get('/Demand', [verifyToken, verifyDriverRole], (req: any, res: R
     
 });
 
-TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+TaxiRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
     let fkUser = req.userData.pkUser || 0;
     let body: IBodyOffer = req.body;
 
@@ -309,7 +300,7 @@ TServiceRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], 
 
 });
 
-TServiceRouter.get('/Offer/Client', [verifyToken], (req: any, res: Response) => {
+TaxiRouter.get('/Offer/Client', [verifyToken], (req: any, res: Response) => {
     let page = req.query.page || 0;
     let fkUser = req.userData.pkUser || 0;
     let sql = `CALL ts_sp_getServicesForClient(${ page }, ${ fkUser });`;
@@ -332,7 +323,7 @@ TServiceRouter.get('/Offer/Client', [verifyToken], (req: any, res: Response) => 
 
 });
 
-TServiceRouter.get('/Offer/Client/Total', [verifyToken], (req: any, res: Response) => {
+TaxiRouter.get('/Offer/Client/Total', [verifyToken], (req: any, res: Response) => {
     let fkUser = req.userData.pkUser || 0;
     let sql = `CALL ts_sp_overallPageServicesforClient(${ fkUser });`;
 
@@ -354,7 +345,7 @@ TServiceRouter.get('/Offer/Client/Total', [verifyToken], (req: any, res: Respons
 
 });
 
-TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+TaxiRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     
     let fkUser = req.userData.pkUser || 0;
     let body: IBodyOffer = req.body;
@@ -381,13 +372,26 @@ TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (
         if (data[0].showError === 0) {
             const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
             
-            // extraer los indices hijos de un pentágono con radio 6 del indice padre
+            // extraer los indices hijos del indice padre
             const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
             const msg = `${ nameUser }, ha aceptado a otro conductor.`;
-            // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+            const payload = { 
+                pkService: body.pkService,
+                msg, 
+                indexHex: body.indexHex 
+            };
+
             indexChildren.forEach( indexHex => {
-                Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
+                Server.io.in( indexHex ).emit( 'disposal-service', payload );
             });
+
+            // notificar al panel que el servicio ya no esta disponible
+            const payloadWeb = {
+                 indexHex: body.indexHex,
+                 pkClient: fkUser
+            };
+            Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb );
+
         }
 
         res.json({
@@ -400,7 +404,7 @@ TServiceRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (
 
 });
 
-TServiceRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (req: Request, res: Response) => {
+TaxiRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (req: Request, res: Response) => {
     let pkService = req.params.pk || 0;
 
     let sql = `CALL ts_sp_getInfoService( ${ pkService } );`;
@@ -422,15 +426,20 @@ TServiceRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (
     }); 
 });
 
-TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+TaxiRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     
+    // api donde el cliente, esperando taxi cancela el servicio
+
     let fkUser = req.userData.pkUser || 0;
     let nameUser = req.userData.nameComplete || '';
     let pkService = req.params.id || 0;
 
     let body = req.body;
 
-    let sql = `CALL ts_sp_deleteService( ${ pkService }, ${ fkUser }, '${ reqIp.getClientIp( req ) }' );`;
+    let sql = `CALL ts_sp_deleteService( `;
+    sql += `${ pkService }, `;
+    sql += `${ fkUser }, `;
+    sql += `'${ reqIp.getClientIp( req ) }' );`;
     
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
@@ -445,17 +454,19 @@ TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req:
             // obtener el padre de la ubicación dada en un radio mas grande
             const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
             
-            // extraer los indices hijos de un pentágono con radio 6 del indice padre
+            // extraer los indices hijos de un pentágono con radio 7 del indice padre
             const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
             const msg = `${ nameUser }, ha cancelado el servicio.`;
-            // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
             indexChildren.forEach( indexHex => {
                 Server.io.in( indexHex ).emit( 'disposal-service', { pkService, msg, indexHex: body.indexHex } );
             });
 
             // notificar al panel que se eliminó un servicio
-            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
-            Server.io.in( 'WEB' ).emit( 'current-del-service', {} );
+            const payloadWeb = {
+                indexHex: body.indexHex,
+                pkClient: fkUser
+            };
+            Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb );
         }
 
         res.json({
@@ -468,10 +479,13 @@ TServiceRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req:
 
 });
 
-TServiceRouter.put('/Service/DeleteRun/:id/:isClient', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+TaxiRouter.put('/Service/DeleteRun/:id/:isClient', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
     let pkService = req.params.id || 0;
     let isClient = req.params.isClient || null;
     let fkUser = req.userData.pkUser || 0;
+    // let nameUser = req.userData.nameComplete || '';
+
+    // cancelando servicio despues de haber sido aceptado, antes de ir al punto destino
 
     let validIs = ['true', 'false'];
 
@@ -510,7 +524,8 @@ TServiceRouter.put('/Service/DeleteRun/:id/:isClient', [verifyToken, verifyDrive
     
 });
 
-TServiceRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+TaxiRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+    // api donde el taxista recahaza un servicio
     let fkUser = req.userData.pkUser || 0;
     let body = req.body;
 
@@ -539,10 +554,12 @@ TServiceRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any
     }); 
 });
 
-TServiceRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+TaxiRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+    // api donde se recahaza la oferta de un taxista
     // let fkUser = req.userData.pkUser || 0;
     let body = req.body;
-    let nameUser = req.userData.nameComplete || '';
+    // let nameUser = req.userData.nameComplete || '';
+    // cliente rechaza oferta de conductor
 
     let sql = `CALL ts_sp_declineOfferDriver(`;
     sql += `${ body.pkOffer }, `;
@@ -560,22 +577,28 @@ TServiceRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (r
             });
         }
 
-        if (data[0].showError === 0) {
-            // obtener el padre de la ubicación dada en un radio mas grande
-            const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
+        // if (data[0].showError === 0) {
+        //     // obtener el padre de la ubicación dada en un radio mas grande
+        //     const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
             
-            // extraer los indices hijos de un pentágono con radio 6 del indice padre
-            const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
-            const msg = `${ nameUser }, ha cancelado el servicio.`;
-            // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
-            indexChildren.forEach( indexHex => {
-                Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
-            });
+        //     // extraer los indices hijos de un pentágono con radio 6 del indice padre
+        //     const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
+        //     const msg = `${ nameUser }, ha cancelado el servicio.`;
+        //     // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+        //     indexChildren.forEach( indexHex => {
+        //         Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
+        //     });
 
             // notificar al panel que se eliminó un servicio
             // si todo se hizo correctamente notificamos al panel un nuevo tráfico
-            Server.io.in( 'WEB' ).emit( 'current-del-service', {} );
-        }
+            // const payloadWeb = {
+            //     pkService: body.pkService,
+            //     msg,
+            //     indexHex: body.indexHex,
+            //     pkClient: fkUser
+            // }
+            // Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb);
+        // }
 
         res.json({
             ok: true,
@@ -586,7 +609,7 @@ TServiceRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (r
     }); 
 });
 
-TServiceRouter.put('/Service/Calification/:id', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+TaxiRouter.put('/Service/Calification/:id', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
     
     let body = req.body;
     let fkUser = req.userData.pkUser || 0;
@@ -627,17 +650,19 @@ TServiceRouter.put('/Service/Calification/:id', [verifyToken, verifyDriverClient
     }); 
 });
 
-TServiceRouter.get('/Waiting/Driver', [verifyToken, verifyClientRole], (req: any, res: Response) => {
+TaxiRouter.get('/Waiting/Driver', [verifyToken, verifyClientRole], (req: any, res: Response) => {
 
     let fkUser = req.userData.pkUser || 0;
+    let pkCategory = req.query.pkCategory || 1;
 
     const userSk: UserSocket = Users.onFindUserForPk( fkUser );
-
+    // Obtenga todos los hexágonos en un anillo k alrededor de un centro dado.
+    // El orden de los hexágonos no está definido
     const indexChildren: string[] = h3.kRing( userSk.indexHex , 1);
 
     const InWhereIndex = `( '${ indexChildren.join("', '") }' )`;
 
-    let sql = `CALL ts_sp_getDriversWaiting( "${ InWhereIndex }" )`;
+    let sql = `CALL ts_sp_getDriversWaiting( "${ InWhereIndex }", ${ pkCategory } )`;
 
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
@@ -658,4 +683,4 @@ TServiceRouter.get('/Waiting/Driver', [verifyToken, verifyClientRole], (req: any
 });
 
 
-export default TServiceRouter;
+export default TaxiRouter;

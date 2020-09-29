@@ -1,8 +1,6 @@
 import { Request, Response, Router } from "express";
-import { IBodyJournal } from "./../interfaces/body_journal.interface";
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
-import reqIp from "request-ip";
 import MainServer from "../classes/mainServer.class";
 import { ListUserSockets } from "../classes/listUserSockets.class";
 import h3 from 'h3-js';
@@ -30,8 +28,11 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
                                 nameComplete: user.nameComplete,
                                 codeCategory: user.category
                             };
-    if (user.pkUser !== 0 && user.playGeo ) {   
+    if (user.pkUser !== 0 && user.playGeo ) {
         mainServer.io.in('WEB').emit('current-position-driver', payloadPosition);
+    }
+    
+    if (user.pkUser !== 0 && !user.occupied) {
         // emitiendo coords a clientes vecinos
         const arrChildren: string[] = h3.kRing( indexHex , 1);
         arrChildren.forEach( (indexChildren) => {

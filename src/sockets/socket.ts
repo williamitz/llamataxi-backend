@@ -14,6 +14,7 @@ import Cryptr from 'cryptr';
 import { ENCRYPT_KEY, TWILIO_ID, TWILIO_TOKEN, TWILIO_PHONE } from '../global/environments.global';
 import twilio from 'twilio';
 import { IContact } from '../interfaces/contacs.interfaces';
+import { IPlayGeo } from '../interfaces/body_playGeo.interface';
 const cryptr = new Cryptr(ENCRYPT_KEY);
 
 const clientTwilio = twilio( TWILIO_ID , TWILIO_TOKEN);
@@ -84,7 +85,7 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
     });
 };
 
-export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
+export const logoutUser = ( client: Socket, io: SocketIO.Server, sizePather: number, sizeChildren: number ) => {
 
     client.on('logout-user', (payload: any, callback: Function) => {
 
@@ -120,14 +121,16 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server ) => {
 
         if (role === 'DRIVER_ROLE') {
             
-            // emitiendo coords a clientes vecinos
-            const arrChildren: string[] = h3.kRing( indexHex , 1);
-            arrChildren.forEach( (indexChildren) => {
-                io.in( `${ indexChildren }-client` ).emit( 'logout-driver', { pkUser } );
+            const indexParent = h3.h3ToParent( indexHex , sizePather);
+            
+            // extraer los indices hijos del indice padre
+            const indexChildren: string[] = h3.h3ToChildren( indexParent , sizeChildren);
+
+            indexChildren.forEach( (indexHex) => {
+                io.in( `${ indexHex }-client` ).emit( 'logout-driver', { pkUser } );
             });
 
         }
-
 
         onSingSocketDB(pkUser, '', false).then( (resSql) => {
 
@@ -189,8 +192,8 @@ export const serviceDelRun = ( client: Socket, io: SocketIO.Server ) => {
     
 }
 
-export const changePlayGeo = ( client: Socket, io: SocketIO.Server ) => {
-    client.on('change-play-geo', ( payload: any, callback: Function ) => {
+export const changePlayGeo = ( client: Socket, io: SocketIO.Server, sizePather: number, sizeChildren: number ) => {
+    client.on('change-play-geo', ( payload: IPlayGeo, callback: Function ) => {
         const userIO = listUser.onFindUser( client.id );
         
         if (userIO.pkUser === 0) {
@@ -205,23 +208,27 @@ export const changePlayGeo = ( client: Socket, io: SocketIO.Server ) => {
         const ok = listUser.onChangePlayGeo( client.id, payload.value );
         if (!payload.value) {            
             io.in('WEB').emit('driver-off', { pkUser: userIO.pkUser });
-            io.in('CLIENT_ROLE').emit('driver-off', { pkUser: userIO.pkUser });
+
+            const indexParent = h3.h3ToParent( userIO.indexHex , sizePather);
+            
+            // extraer los indices hijos del indice padre
+            const indexChildren: string[] = h3.h3ToChildren( indexParent , sizeChildren);
+
+            indexChildren.forEach( (indexHex) => {
+                io.in( `${ indexHex }-client` ).emit( 'driver-off', { pkUser: userIO.pkUser } );
+            });
+
+            // io.in('CLIENT_ROLE').emit('driver-off', { pkUser: userIO.pkUser });
         }
         
         onUpdatePlayGeo( userIO.pkUser, payload.value ).then( (res) => {
 
-            callback({
-                ok,
-                message: 'Se cambió el estado geo con éxito' + payload.value
-            });
+            callback( res );
 
         }).catch(e => {
             
-            console.error('Error al actualizar playGeo');
-            callback({
-                ok: false,
-                message: 'Error al actualizar playGeo'
-            });
+            // console.error('Error al actualizar playGeo');
+            callback(e);
 
         });
         
@@ -259,6 +266,15 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             indexHex: indexHexService,
             totalDrivers: drivers.length
         };
+
+        let payloadPanel = {
+            indexHex: indexHexService,
+            polygon,
+            center,
+            totalDrivers: drivers.length
+        };
+
+        io.in( 'WEB' ).emit( 'new-service', payloadPanel );
         
         let driverNotify:UserSocket[] = [];
 
@@ -393,7 +409,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
         const oldCategory = user.category;
         const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
         const roomIndex = indexHex;
-        const roomIndexCategory = `${ roomIndex }-${ user.category }`;
+        const roomIndexCategory = `${ roomIndex }-${ oldCategory }`;
         const oldRoomIndexCategory = `${ oldIndex }-${ oldCategory }`
         // agregar al usuario a la sala con el indice del pentágono en el que se encuentra
         // user.indexHex = indexHex;
@@ -453,6 +469,10 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
                 io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
             });
 
+            // emitiendo coords a clientes esperando taxistas
+            io.in( `${ roomIndex }-client` ).emit( 'current-position-driver', payloadPosition );
+            io.in( `${ roomIndexCategory }-client` ).emit( `current-position-driver-${ oldCategory }`, payloadPosition );
+
             onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
                 
                 // notificar a clients cercanos a la ubicación, y al panel web
@@ -488,29 +508,57 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
 
 };
 
-export const currentPosClient = ( client: Socket, radiusPentagon: number ) => {
+export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
     client.on('current-position-client', (payload: IUserCoords, callback: Function ) => {
+
         const user = listUser.onFindUser( client.id );
         const oldIndexHex = user.indexHex;
         const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
+        const oldRoom = `${ oldIndexHex }-client`;
+        const newRoom = `${ indexHex }-client`;
+        const oldRoomHexCategory = `${ oldIndexHex }-${ payload.codeCategory }-client`;
+        const roomHexCategory = `${ indexHex }-${ payload.codeCategory }-client`;
+
+        const payloadPosition = { 
+            pkUser: user.pkUser,
+            coords: payload,
+            nameComplete: user.nameComplete,
+            codeCategory: user.category
+        };
+
+        io.in('WEB').emit('current-position-client', payloadPosition);
 
         if ( oldIndexHex !== indexHex ) {
             
             if (oldIndexHex !== '') {                
-                const oldRoom = `${ oldIndexHex }-client`;
+                
                 client.leave( oldRoom, (err: any) => {
                     if (err) {
                         console.error(`Error al expulsar a ${ user.userName } de la sala ${ oldRoom }`);
                     }
                 });
+
+                client.leave( oldRoomHexCategory, (err: any) => {
+                    if (err) {
+                        console.error(`Error al expulsar a ${ user.userName } de la sala ${ oldRoomHexCategory }`);
+                    }
+                });
+
             }
             
-            const newRoom = `${ indexHex }-client`;
+            
             client.join( newRoom , (err: any) => {
                 if (err) {
                     console.error(`Error al agregar a ${ user.userName } en la sala ${ newRoom }`);
                 }
             });
+
+            client.join( roomHexCategory , (err: any) => {
+                if (err) {
+                    console.error(`Error al agregar a ${ user.userName } en la sala ${ roomHexCategory }`);
+                }
+            });
+            
         }
  
         callback({
@@ -585,7 +633,7 @@ export const changeOccupiedDriver = ( client: Socket ) => {
     });
 };
 
-export const currentPositionService = ( client: Socket, io: SocketIO.Server ) => {
+export const currentPositionService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
     client.on('current-position-driver-service', ( payload: IWatchGeo, callback: Function ) => {
         const clientSocket = listUser.onFindUserForPk( payload.pkClient );
 
@@ -596,11 +644,80 @@ export const currentPositionService = ( client: Socket, io: SocketIO.Server ) =>
             });
         }
 
+        const driverIO = listUser.onFindUser( client.id );
+        const oldIndex = driverIO.indexHex;
+        const oldCategory = driverIO.category;
+        const indexHex = driverIO.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
+        const roomIndex = indexHex;
+        const roomIndexCategory = `${ roomIndex }-${ driverIO.category }`;
+        const oldRoomIndexCategory = `${ oldIndex }-${ oldCategory }`
+        // agregar al conductor a sala con el indice del pentágono en el que se encuentra
+
+        if (oldIndex !== roomIndex) {
+
+            if (oldIndex !== '') {                
+                client.leave( oldIndex, (err: any) => {
+                    if (err) {
+                        console.error(`Error al expulsar a ${ driverIO.userName } de la sala ${ roomIndex }`);
+                    }
+                });
+            }
+
+            client.join( roomIndex, (err: any) => {
+                if (err) {
+                    console.error(`Error al agregar a ${ driverIO.userName } en la sala ${ roomIndex }`);
+                }
+            });
+
+        }
+
+        if (oldRoomIndexCategory !== roomIndexCategory) {
+
+            if (oldCategory !== '') {
+                
+                client.leave( oldRoomIndexCategory, (err: any) => {
+                    if (err) {
+                        console.error(`Error al expulsar a ${ driverIO.userName } de la sala ${ oldRoomIndexCategory }`);
+                    }
+                });
+            }
+        
+            client.join( roomIndexCategory, (err: any) => {
+                if (err) {
+                    console.error(`Error al agregar a ${ driverIO.userName } en la sala ${ roomIndexCategory }`);
+                }
+            });
+            
+        }
+
+        const payloadPosition = { 
+            pkUser: driverIO.pkUser,
+            coords: payload,
+            occupied: true,
+            nameComplete: driverIO.nameComplete,
+            codeCategory: driverIO.category
+        };
+
+        io.in('WEB').emit('current-position-driver', payloadPosition);
+        // emitiendo coords a cliente del servicio
         io.in( clientSocket.id ).emit('current-position-driver', payload);
-    
-        callback({
-            ok: true,
-            message: 'Cliente notificado'
+
+        onUpdateCoords( driverIO.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
+            
+            // notificar a clients cercanos a la ubicación, y al panel web
+            callback({
+                ok: true,
+                message: `Se actualizo coordenadas con éxito`,
+                indexHex: roomIndex,
+                data: resSql.data
+            });
+
+        }).catch(e => {
+            callback({
+                ok: false,
+                error: e,
+                message: `Error al actualizar coordenadas **Viernes***`
+            });
         });
 
     });
@@ -777,7 +894,11 @@ function onUpdatePlayGeo( pkUser: number, value: boolean ) {
         mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
 
             if (error) {                
-                reject( {ok: false, error} );
+                reject({
+                    ok: false,
+                    error,
+                    message: 'Error al actualizar playGeo ***Viernes***'
+                });
             }
 
             let dataString = JSON.stringify(data);
@@ -859,7 +980,7 @@ function onAddPanic( pkService: number, fkPerson: number, fkUser: number
 }
 
 function onGetErrorGeo( showError: number ): string {
-    let arrErr = showError === 0 ? ['Se notificó alerta con éxito'] : ['Error'];
+    let arrErr = showError === 0 ? ['Se actualizó play geo con éxito'] : ['Error'];
 
     if (showError & 1) {
         arrErr.push('No se encontró usuario');

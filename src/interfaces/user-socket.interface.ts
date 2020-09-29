@@ -15,5 +15,6 @@ export interface IUserSocket {
   export interface IUserCoords {
     lat: number;
     lng: number;
+    codeCategory?: string;
   }
   
