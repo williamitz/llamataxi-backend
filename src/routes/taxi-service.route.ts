@@ -108,7 +108,7 @@ TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res:
         }
 
         if (data[0].showError === 0) {
-            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            // si todo se hizo correctamente notificamos al panel un nuevo servicio
             Server.io.in( 'WEB' ).emit( 'current-new-service', {pkservice: data[0].pkService} )
         }
 

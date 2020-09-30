@@ -519,6 +519,15 @@ export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPen
         const oldRoomHexCategory = `${ oldIndexHex }-${ payload.codeCategory }-client`;
         const roomHexCategory = `${ indexHex }-${ payload.codeCategory }-client`;
 
+        if (user.pkUser === 0) {
+            return callback({
+                ok: false,
+                error: {
+                    message: 'No se encontró usuario socket'
+                }
+            });
+        }
+
         const payloadPosition = { 
             pkUser: user.pkUser,
             coords: payload,
@@ -560,11 +569,26 @@ export const currentPosClient = ( client: Socket, io: SocketIO.Server, radiusPen
             });
             
         }
- 
-        callback({
-            ok: true,
-            indexHex
+
+        onUpdateCoords( user.pkUser, payload.lat, payload.lng, indexHex ).then( (resSql) => {
+                
+            // notificar a clients cercanos a la ubicación, y al panel web
+            callback({
+                ok: true,
+                message: `Se actualizo coordenadas cliente :D`,
+                indexHex,
+                data: resSql.data
+            });
+
+        }).catch(e => {
+            console.error('Error al actualizar coordenadas cliente :C', e);
+            callback({
+                ok: false,
+                error: e,
+                message: `Error al actualizar coordenadas`
+            });
         });
+ 
     });
 };
 
@@ -693,6 +717,8 @@ export const currentPositionService = ( client: Socket, io: SocketIO.Server, rad
         const payloadPosition = { 
             pkUser: driverIO.pkUser,
             coords: payload,
+            lat: payload.lat,
+            lng: payload.lng,
             occupied: true,
             nameComplete: driverIO.nameComplete,
             codeCategory: driverIO.category

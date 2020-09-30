@@ -124,27 +124,6 @@ DriverRoutes.put('/Driver/Profile/Update/:id', [verifyToken, verifyWebmasterRole
     let pkDriver = req.params.id || 0;
     let body: IBodyUser = req.body;
     let fkUser = req.userData.pkUser || 0;
-    /**
-     * IN `InPkUser` int,
-        IN `InPkPerson` int,
-        IN `InPkDriver` int,
-        IN `InFkTypeDoc` int,
-        IN `InFkNationality` int,
-        IN `InDocument` varchar(15),
-        
-        IN `InName` varchar(50),
-        IN `InSurname` varchar(50),
-        IN `InEmail` varchar(50),
-        IN `InPhone` varchar(20),
-        IN `InSex` CHAR(1),
-        IN `InDateBirth` varchar(12),
-        
-        IN `InDateLicenceExpiration` varchar(12),
-        IN `InIsEmployee` tinyint,
-        
-        IN `InFkUser` int,
-        IN `InIpUser` varchar(20)
-     */
 
     let sql = `CALL as_sp_updateProfileDriver(`;
     sql += `${ body.pkUser }, `;
@@ -227,7 +206,7 @@ DriverRoutes.delete('/Driver/:pkUser/:pkDriver/:status', [verifyToken, verifyWeb
     });
 });
 
-DriverRoutes.post('/Monitor/Drivers', [verifyToken], (req: any, res: Response) => {
+DriverRoutes.get('/Monitor/Drivers', [verifyToken], (req: any, res: Response) => {
     
     let sql = 'CALL as_sp_getMonitorDrivers();'
 
@@ -241,7 +220,26 @@ DriverRoutes.post('/Monitor/Drivers', [verifyToken], (req: any, res: Response) =
 
         res.json({
             ok: true,
-            // showError: data[0].showError,
+            data
+        });
+    });
+
+});
+
+DriverRoutes.get('/Monitor/Clients', [verifyToken], (req: any, res: Response) => {
+    
+    let sql = 'CALL as_sp_getMonitorClients();'
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
             data
         });
     });
@@ -283,8 +281,6 @@ DriverRoutes.get('/Monitor/GetZones', [verifyToken, verifyWebRoles], (req: any, 
 
     });
 
-
-    
-
 });
+
 export default DriverRoutes;

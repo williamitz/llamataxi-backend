@@ -24,6 +24,8 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
     const payloadPosition = { 
                                 pkUser: user.pkUser,
                                 coords: body,
+                                lat: body.lat,
+                                lng: body.lng,
                                 occupied: user.occupied ,
                                 nameComplete: user.nameComplete,
                                 codeCategory: user.category
@@ -59,11 +61,9 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
 
     mysqlCnn.onExecuteQuery(sql, (error: any, data: any[]) => {
         if (error) {
-            res.status(400).json({
+            return res.status(400).json({
                 ok: false,
-                data: {
-                    message: 'Track recibido con éxito'
-                }
+                error
             });
         }
         
