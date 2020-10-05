@@ -23,6 +23,8 @@ import ChartsRouter from "./charts.rotes";
 import ContactRouter from "./contacts.route";
 import TrackerRouter from "./tracker.router";
 import TaxiRouter from './taxi-service.route';
+import HistoryRouter from "./history.route";
+import StatRouter from "./statistics.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -51,5 +53,9 @@ MainRouter.use( UtilRoutes );
 MainRouter.use( ChartsRouter );
 MainRouter.use( ContactRouter );
 MainRouter.use( TrackerRouter );
+MainRouter.use( HistoryRouter );
+MainRouter.use( StatRouter );
+
+
 
 export default MainRouter;
