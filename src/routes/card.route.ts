@@ -12,6 +12,8 @@ CardRouter.post('/Card/Add', [verifyToken], (req: any, res: Response) => {
     
     let body: ICardBody = req.body;
     let fkUser = req.userData.pkUser || 0;
+    let fkPerson = req.userData.pkPerson || 0;
+    
     /**
      *  IN `InFkPerson` int,
         IN `InIdCard` varchar(100),
@@ -28,7 +30,7 @@ CardRouter.post('/Card/Add', [verifyToken], (req: any, res: Response) => {
      */
     
     let sql = `CALL ts_sp_addCard(`
-    sql += `${ body.fkPerson }, `;
+    sql += `${ fkPerson }, `;
     sql += `'${ body.idCardCulqui }', `;
     sql += `'${ body.idClientCulqui }', `;
     sql += `'${ body.cardNumber }', `;

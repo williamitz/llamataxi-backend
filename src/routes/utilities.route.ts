@@ -1,7 +1,5 @@
 const axios = require('axios');
 import { Request, Response, Router } from 'express';
-import bcrypt from 'bcrypt';
-import reqIp from 'request-ip';
 
 let UtilRoutes = Router();
 
