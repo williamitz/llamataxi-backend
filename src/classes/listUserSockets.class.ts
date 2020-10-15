@@ -84,6 +84,18 @@ export class ListUserSockets {
         return true;
     }
 
+    onConfigOs( id: string, osId: string ) {
+        const finded = this.listUser.find( user => user.id === id  );
+        if (!finded) {
+            console.error('No se encontró usuario socket');
+            return false;
+        }
+
+        finded.osID = osId;
+
+        return true;
+    }
+
     onLogoutUser(id: string, pkUser: number) {
         const finded = this.listUser.find( user => user.id === id  );
         if (!finded) {
@@ -225,6 +237,34 @@ export class ListUserSockets {
     onFindDriversHex( hex: string ): UserSocket[] {
         // && user.category === category 
         return this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false && user.playGeo === true );
+    }
+
+    onOsDriversHex( hex: string ): string[] {
+        // && user.category === category 
+        const drivers = this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.occupied === false && user.playGeo === true );
+        const osIds: string[] = [];
+
+        drivers.forEach( us => {
+            if (us.osID !== '') {
+                osIds.push( us.osID );                
+            }
+        });
+
+        return osIds;
+    }
+
+    onOsDriversCatHex( hex: string, category: string ): string[] {
+        // && user.category === category 
+        const drivers = this.listUser.filter( user => user.role === 'DRIVER_ROLE' && user.indexHex === hex && user.category === category  && user.occupied === false && user.playGeo === true );
+        const osIds: string[] = [];
+
+        drivers.forEach( us => {
+            if (us.osID !== '') {
+                osIds.push( us.osID );                
+            }
+        });
+
+        return osIds;
     }
 
     onUpdateTime( id: string ) {

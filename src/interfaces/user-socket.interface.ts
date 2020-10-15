@@ -17,4 +17,8 @@ export interface IUserSocket {
     lng: number;
     codeCategory?: string;
   }
+
+  export interface IConfigOs {
+    osId: string;
+  }
   

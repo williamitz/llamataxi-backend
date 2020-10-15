@@ -25,6 +25,7 @@ import TrackerRouter from "./tracker.router";
 import TaxiRouter from './taxi-service.route';
 import HistoryRouter from "./history.route";
 import StatRouter from "./statistics.route";
+import RestoreRouter from "./restore.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -55,6 +56,7 @@ MainRouter.use( ContactRouter );
 MainRouter.use( TrackerRouter );
 MainRouter.use( HistoryRouter );
 MainRouter.use( StatRouter );
+MainRouter.use( RestoreRouter );
 
 
 

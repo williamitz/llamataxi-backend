@@ -23,6 +23,36 @@ export let verifyToken = ( req: any, res: Response, next: NextFunction ) => {
 
 }
 
+export let verifyTokenRestore = ( req: any, res: Response, next: NextFunction ) => {
+    
+    let token = req.get('AuthRestore') || '';
+    
+    jwt.verify( token, SEED_KEY, (error: any, decoded: any) => {
+
+        if (error) {
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+        
+        if (!decoded.dataRestore.role || decoded.dataRestore.role !== 'restore') {
+            return res.status(401).json({
+                ok: false,
+                error: {
+                    message: 'Junior como hacker te vas a morir de hambre 💀💀'
+                }
+            });
+        }
+
+        req.dataRestore = decoded.dataRestore;
+
+        next();
+
+    });
+
+}
+
 export let verifyWebmasterRole = ( req: any, res: Response, next: NextFunction ) => {
     
     let role = req.userData.role || 'xD';

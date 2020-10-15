@@ -1,6 +1,6 @@
 import  { Socket } from 'socket.io';
 import { ListUserSockets } from '../classes/listUserSockets.class';
-import { IUserSocket, IUserCoords } from '../interfaces/user-socket.interface';
+import { IUserSocket, IUserCoords, IConfigOs } from '../interfaces/user-socket.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
 import IResponse from '../interfaces/resp_promise.interface';
 import SocketIO from 'socket.io';
@@ -27,6 +27,28 @@ export const connectUser = ( client: Socket ) => {
     listUser.onAddUser( client.id );
     console.log('usuario conectado', client.id);
 }
+
+export const configOsID = ( client: Socket ) => {
+    client.on('config-osID', (payload: IConfigOs, callback: Function) => {
+        const ok = listUser.onConfigOs( client.id, payload.osId );
+        if (!ok) {            
+            return callback({
+                ok: false, 
+                error:{ 
+                    message: 'No se encontró usuario socket :(' 
+                }
+            });
+        }
+
+        callback({
+            ok: true, 
+            data:{ 
+                message: 'osId configurado con éxito :)' 
+            }
+        });
+
+    });
+};
 
 export const singUser = ( client: Socket, io: SocketIO.Server ) => {
     client.on('sing-user', (payload: IUserSocket, callback: Function) => {
@@ -275,6 +297,7 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
         };
 
         io.in( 'WEB' ).emit( 'new-service', payloadPanel );
+        const outDrivers: string[] = [];
         
         let driverNotify:UserSocket[] = [];
 
@@ -284,6 +307,10 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 // notificamos a todos los conductores en los pentagonos hijos
                 indexChildren.forEach( indexHexChildren => {
                     io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                    
+                    const osIds = listUser.onOsDriversHex( indexHexChildren );
+                    outDrivers.push( ...osIds );
+
                 });
 
                 driverNotify = drivers;
@@ -294,6 +321,12 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 indexChildren.forEach( indexHexChildren => {
                     io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
                     io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                    
+                    const osIdsST = listUser.onOsDriversCatHex( indexHexChildren, 'STANDAR' );
+                    const osIdsPR = listUser.onOsDriversCatHex( indexHexChildren, 'PREMIUM' );
+                    outDrivers.push( ...osIdsST );
+                    outDrivers.push( ...osIdsPR );
+
                 });
                 
                 driverNotify = drivers.filter( driver => driver.category === 'STANDAR' || driver.category === 'PREMIUM' );
@@ -304,21 +337,24 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 // notificamos a todos los conductores en los pentagonos hijos
                 indexChildren.forEach( indexHexChildren => {
                     io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+
+                    const osIdsPR = listUser.onOsDriversCatHex( indexHexChildren, 'PREMIUM' );
+                    outDrivers.push( ...osIdsPR );
                 });
                 driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
 
                 break;
-
+        }
+        
+        let response = {
+            ok: true,
+            data: driverNotify,
+            other: outDrivers,
+            total: driverNotify.length,
+            error: {
+                message: driverNotify.length === 0 ? 'No se encontrarón conductores cercanos' : ''
             }
-            
-            let response = {
-                ok: true,
-                data: driverNotify,
-                total: driverNotify.length,
-                error: {
-                    message: driverNotify.length === 0 ? 'No se encontrarón conductores cercanos' : ''
-                }
-            };
+        };
 
         callback( response );
 

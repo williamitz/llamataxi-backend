@@ -24,8 +24,10 @@ server.onRun( (error: any) => {
     if (error) return console.log('Error al levantar servidor, revise dependencias  :(');
 
     console.log(`Servidor corriendo en puerto : ${ server.port }`);
-    server.loadJournal();
-    server.loadPercentRate();
+    setTimeout(() => {
+        server.loadJournal();
+        server.loadPercentRate();
+    }, 2000);
     
 });
 

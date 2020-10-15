@@ -324,6 +324,16 @@ AuthRoutes.post('/auth/token', (req: Request, res: Response) => {
             });
         }
 
+        if (decoded.dataUser.role === 'restore') {
+            return res.status(401).json({
+                ok: false,
+                error: {
+                    message: 'Junior como hacker te vas a morir de hambre 💀💀',
+                    decoded
+                }
+            });
+        }
+
         if ( rolesInvalid.includes(decoded.dataUser.role) ) {
             
             return res.json({
