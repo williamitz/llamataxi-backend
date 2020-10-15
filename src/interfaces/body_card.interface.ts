@@ -1,6 +1,5 @@
 export interface ICardBody {
     pkCard: number;
-    fkPerson: number;
     idCardCulqui: string;
     idClientCulqui: string;
     cardNumber: string;
