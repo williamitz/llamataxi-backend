@@ -77,7 +77,7 @@ RateRouter.get("/Rate/GetAll", [verifyToken], (req: Request, res: Response) => {
 
 RateRouter.post("/Rate/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyRate = req.body;
-  let pkUserToken = 1; //req.userData.pkUser || 0;
+  let pkUserToken = req.userData.pkUser || 0;
 
   let sql = `CALL cc_sp_addRate( ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${ body.priceMin }, ${pkUserToken},'${reqIp.getClientIp(req)}' );`;
 
@@ -100,7 +100,7 @@ RateRouter.put("/Rate/Update/:id", [verifyToken], (req: any, res: Response) => {
   let body: IBodyRate = req.body;
 
   let pkParam = req.params.id || 0;
-  let pkUserToken = 1; //req.userData.pkUser || 0;
+  let pkUserToken = req.userData.pkUser || 0;
 
   let sql = `CALL cc_sp_updateRate( ${pkParam}, ${body.fkCategory}, ${body.fkJournal}, ${body.priceRate}, ${ body.priceMin }, ${pkUserToken}, '${reqIp.getClientIp(req)}');`;
 
@@ -122,10 +122,10 @@ RateRouter.put("/Rate/Update/:id", [verifyToken], (req: any, res: Response) => {
   });
 });
 
-RateRouter.delete("/Rate/Delete/:id/:statusRegister", [verifyToken], (req: Request, res: Response) => {
+RateRouter.delete("/Rate/Delete/:id/:statusRegister", [verifyToken], (req: any, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
-    let pkUserToken = 1; //req.userData.pkUser || 0;
+    let pkUserToken = req.userData.pkUser || 0;
 
     let sql = `CALL cc_sp_deleteRate( '${pkParam}', ${status}, ${pkUserToken}, '${reqIp.getClientIp(req)}' );`;
 

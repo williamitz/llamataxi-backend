@@ -36,11 +36,11 @@ export let verifyTokenRestore = ( req: any, res: Response, next: NextFunction ) 
             });
         }
         
-        if (!decoded.dataRestore.role || decoded.dataRestore.role !== 'restore') {
+        if ( !decoded.dataRestore || !decoded.dataRestore.role || decoded.dataRestore.role !== 'restore') {
             return res.status(401).json({
                 ok: false,
                 error: {
-                    message: 'Junior como hacker te vas a morir de hambre 💀💀'
+                    message: 'Junior como hacker te vas a morir de hambre 🖕💀🖕'
                 }
             });
         }

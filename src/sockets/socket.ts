@@ -370,12 +370,14 @@ export const configCategoryUser = ( client: Socket ) => {
         if (user.pkUser === 0) {
             return callback({ok: false, message: 'Usuario no encontrado'});
         }
-
+        
+        const oldCategory = user.category;
+        const oldIndexHex = user.indexHex;
         user.pkCategory = payload.pkCategory;
         user.category = payload.codeCategory;
         
         // sacar a los conductores de su sala anterior
-        if (user.category != '') {
+        if (oldCategory != '') {
             
             client.leave( user.category, (error: any) => {
                 if (error) {
@@ -387,7 +389,36 @@ export const configCategoryUser = ( client: Socket ) => {
                     });
                 }
             });
+
+            if ( oldIndexHex !== '' ) {
+    
+                client.leave( `${ oldIndexHex }-${ oldCategory }` , (error: any) => {
+                    if (error) {
+                        return callback({
+                            ok: false,
+                            error:{ 
+                                message: `Error al agregar a sala ${ user.category } :(` 
+                            }
+                        });
+                    }
+                });
+
+
+                
+            }
         }
+
+        client.join( `${ oldIndexHex }-${ payload.codeCategory }`  , (error: any) => {
+            if (error) {
+                return callback({
+                    ok: false,
+                    error:{ 
+                        message: `Error al agregar a sala ${ user.category } :(` 
+                    }
+                });
+            }
+        });
+
         
         client.join( payload.codeCategory , (error: any) => {
             if (error) {

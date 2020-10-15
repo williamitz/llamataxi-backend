@@ -318,25 +318,24 @@ AuthRoutes.post('/auth/token', (req: Request, res: Response) => {
 
     jwt.verify( token, SEED_KEY, (error, decoded: any) => {
         if (error) {
-            return res.json({
+            return res.status(401).json({
                 ok: false,
                 error
             });
         }
 
-        if (decoded.dataUser.role === 'restore') {
+        if (!decoded.dataUser) {
             return res.status(401).json({
                 ok: false,
                 error: {
-                    message: 'Junior como hacker te vas a morir de hambre 💀💀',
-                    decoded
+                    message: 'Junior como hacker te vas a morir de hambre 🖕💀🖕'
                 }
             });
         }
 
         if ( rolesInvalid.includes(decoded.dataUser.role) ) {
             
-            return res.json({
+            return res.status(401).json({
                 ok: false,
                 error: {
                     message: 'No tiene permisos para ingresar a la web'

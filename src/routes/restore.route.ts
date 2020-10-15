@@ -4,7 +4,7 @@ import MysqlClass from "../classes/mysqlConnect.class";
 import { SEED_KEY } from "../global/environments.global";
 import { IEmailRestore, IRestore } from "../interfaces/body_restore.interface";
 import nodemailer from "nodemailer";
-import { verifyTokenRestore } from '../middlewares/token.mdd';
+import { verifyTokenRestore, verifyToken } from '../middlewares/token.mdd';
 import IResponse from '../interfaces/resp_promise.interface';
 import reqIp from "request-ip";
 import bcrypt from 'bcrypt';
@@ -91,6 +91,34 @@ RestoreRouter.post( '/User/Restore', [ verifyTokenRestore ], (req: any, res: Res
 
 });
 
+RestoreRouter.delete( '/Disable/Account', [verifyToken], (req: any, res: Response) => {
+
+  let pkUserToken = req.userData.pkUser || 0;
+  let pkPersonToken = req.userData.pkPerson || 0;
+
+  let sql = `CALL as_sp_disableAccount( `;
+  sql += `${ pkUserToken }, `;
+  sql += `${ pkPersonToken }, `;
+  sql += ` '${ reqIp.getClientIp( req ) }' ); `;
+  
+  MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+  
+      if (error) {
+        return res.status(400).json({
+          ok: false,
+          error,
+        });
+      }
+
+      res.json({
+        ok: true,
+        showError: data[0].showError,
+        data: data[0]
+      });
+  });
+  
+});
+
 async function sendEmail( emailTo: string, token: string, name = '' ): Promise<IResponse> {
 
   return new Promise( (resolve, reject) => {
@@ -103,8 +131,8 @@ async function sendEmail( emailTo: string, token: string, name = '' ): Promise<I
         port: 587,
         secure: false, // true for 465, false for other ports
         auth: {
-          user: 'gail.beatty7@ethereal.email', // generated ethereal user
-          pass: 'Eu2PU3ex6NpD1EtqJu', // generated ethereal password
+          user: 'milan47@ethereal.email', // generated ethereal user
+          pass: '1BGcybY1yaYfrwCW4g', // generated ethereal password
         }
     });
 
@@ -116,7 +144,7 @@ async function sendEmail( emailTo: string, token: string, name = '' ): Promise<I
     htmlMsg += `</p>`;
     htmlMsg += ` 👇👇👇  `;
     htmlMsg += `<br/> `;
-    htmlMsg += ` ✅✅ <a target="_blank" href="http://localhost:4200/#/utilities/restore/${ token }"> RESTAURAR </a>  ✅✅<br/> `;
+    htmlMsg += ` ✅✅🌐  <a target="_blank" href="https://admin.llamataxiperu.com//#/utilities/restore/${ token }"> RESTAURAR </a>  ✅✅<br/> `;
     htmlMsg += `<br/> `;
     htmlMsg += `<br/> `;
     htmlMsg += `Por seguridad restaura tu contraseña antes que el link <b>caduque</b>.`;
@@ -125,7 +153,7 @@ async function sendEmail( emailTo: string, token: string, name = '' ): Promise<I
 
     // send mail with defined transport object
     const mailOptions = {
-      from: 'gail.beatty7@ethereal.email', // <foo@example.com> sender address
+      from: 'erika1@ethereal.email', // <foo@example.com> sender address
       to: emailTo, // list of receivers
       subject: "🚨🚕 Llamataxi-perú - Restaurar contraseña 🔑", // Subject line
       // text: "Hello world?", // plain text body
@@ -142,12 +170,6 @@ async function sendEmail( emailTo: string, token: string, name = '' ): Promise<I
 
   });
     
-    // console.log("Message sent: %s", info.messageId);
-    // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-    // Preview only available when sending through an Ethereal account
-    // console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-    // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
 }
 
 export default RestoreRouter;
