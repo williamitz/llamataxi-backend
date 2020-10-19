@@ -85,7 +85,7 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         
         io.to('WEB').emit('user-connect', { pkUser: payload.pkUser });
         
-        io.in( client.id ).emit('sing-success', { ok: true, message: 'Socket congigurado' } );
+        io.in( client.id ).emit('sing-success', { ok: true, message: 'Socket configurado 🙂' } );
 
         console.log('clientes configurados', listUser.onGetUsers());
         onSingSocketDB(payload.pkUser, payload.osID, true).then( (resSql) => {
@@ -116,6 +116,7 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server, sizePather: num
         const device = userLogout.device;
         const role = userLogout.role;
         const indexHex = userLogout.indexHex;
+        const category = userLogout.category;
         
         const ok = listUser.onLogoutUser( client.id, pkUser );
         if (!ok) {
@@ -127,17 +128,41 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server, sizePather: num
             });
         }
 
-        client.leave( device || '', (err: any) => {
+        client.leave( device, (err: any) => {
             if (err) {
                 console.error('Ocurrio un error al expulsar usuario en la sala', device );
             } 
         });
 
-        client.leave( role || '', (err: any) => {
+        client.leave( role, (err: any) => {
             if (err) {
                 console.error('Ocurrio un error al expulsar usuario en la sala', role);
             } 
         });
+
+        if (indexHex !== '') {            
+            client.leave( indexHex, (err: any) => {
+                if (err) {
+                    console.error('Ocurrio un error al expulsar usuario en la sala', indexHex);
+                } 
+            });
+        }
+
+
+        if ( category !== '' ) {
+            client.leave( category, (err: any) => {
+                if (err) {
+                    console.error('Ocurrio un error al expulsar usuario en la sala', category);
+                } 
+            });
+
+            client.leave( `${ indexHex }-${ category }`, (err: any) => {
+                if (err) {
+                    console.error('Ocurrio un error al expulsar usuario en la sala', `${ indexHex }-${ category }`);
+                } 
+            });
+        }
+
         
         io.to('WEB').emit('user-disconnect', { pkUser });
 
@@ -533,7 +558,9 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
             const arrChildren: string[] = h3.kRing( indexHex , 1);
             arrChildren.forEach( (indexChildren) => {
                 const roomClient = `${ indexChildren }-client`;
+                const roomCategClient = `${ indexChildren }-${oldCategory}-client`;
                 io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
+                io.in( roomCategClient ).emit( `current-position-driver-${ oldCategory }`, payloadPosition );
             });
 
             // emitiendo coords a clientes esperando taxistas

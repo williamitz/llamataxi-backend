@@ -56,6 +56,7 @@ export default class MainServer {
             mainSocket.sendNotify( client, this.io );
             mainSocket.currentPosDriver( client, this.io, this.radiusPentagon );
             mainSocket.currentPosClient( client, this.io, this.radiusPentagon );
+            mainSocket.serviceDelRun( client, this.io );
             mainSocket.newService( client, this.io, this.radiusPentagon, this.radiusPather );
             mainSocket.configCategoryUser( client );
             mainSocket.newOfferDriver( client, this.io );

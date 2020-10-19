@@ -53,6 +53,36 @@ export let verifyTokenRestore = ( req: any, res: Response, next: NextFunction ) 
 
 }
 
+export let verifyTokenMonitor = ( req: any, res: Response, next: NextFunction ) => {
+    
+    let token = req.get('AuthMonitor') || '';
+    
+    jwt.verify( token, SEED_KEY, (error: any, decoded: any) => {
+
+        if (error) {
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+        
+        if ( !decoded.dataMonitor || !decoded.dataMonitor.pkService ) {
+            return res.status(401).json({
+                ok: false,
+                error: {
+                    message: 'Junior como hacker te vas a morir de hambre 🖕💀🖕'
+                }
+            });
+        }
+
+        req.dataMonitor = decoded.dataMonitor;
+
+        next();
+
+    });
+
+}
+
 export let verifyWebmasterRole = ( req: any, res: Response, next: NextFunction ) => {
     
     let role = req.userData.role || 'xD';

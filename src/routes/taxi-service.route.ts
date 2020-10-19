@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { verifyToken, verifyClientRole, verifyDriverRole, verifyDriverClientRole } from '../middlewares/token.mdd';
+import { verifyToken, verifyClientRole, verifyDriverRole, verifyDriverClientRole, verifyTokenMonitor } from '../middlewares/token.mdd';
 import MainServer from '../classes/mainServer.class';
 import MysqlClass from '../classes/mysqlConnect.class';
 import { IBodyService, IBodyOffer } from '../interfaces/body_service.interface';
@@ -7,6 +7,8 @@ import reqIp from 'request-ip';
 import h3 from "h3-js";
 import { ListUserSockets } from '../classes/listUserSockets.class';
 import { UserSocket } from '../classes/userSocket.class';
+import jwt from 'jsonwebtoken';
+import { SEED_KEY } from "../global/environments.global";
 
 let TaxiRouter = Router();
 
@@ -418,12 +420,39 @@ TaxiRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (req:
             });
         }
 
+        // creación de token para seguimiento en tiempo real
+        let token = jwt.sign( { dataMonitor: { pkService } }, SEED_KEY, { expiresIn: '3h' } );
+        data[0].monitorToken = token;
+
         res.json({
             ok: true,
             data: data[0]
         });
 
     }); 
+});
+
+TaxiRouter.get('/Service/Info/Monitor', [verifyTokenMonitor], (req: any, res: Response) => {
+
+    let pkService = req.dataMonitor.pkService || 0;
+
+    let sql = `CALL ts_sp_getInfoMonitor( ${ pkService } );`;
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            data: data[0]
+        });
+
+    });
 });
 
 TaxiRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any, res: Response) => {
