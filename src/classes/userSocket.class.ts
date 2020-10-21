@@ -15,6 +15,7 @@ export class UserSocket {
     public coords: ICoords;
     public occupied: boolean;
     public playGeo: boolean;
+    public pkService: number;
 
     constructor( id: string ) {
         this.id = id;
@@ -31,6 +32,7 @@ export class UserSocket {
         this.coords = { lat: 0, lng: 0 };
         this.occupied = false;
         this.playGeo = false;
+        this.pkService = 0;
     }
 
     onUpdateCoords( lat: number, lng: number, radiusPentagon: number ): string{

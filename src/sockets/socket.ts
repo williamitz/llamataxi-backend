@@ -15,6 +15,7 @@ import { ENCRYPT_KEY, TWILIO_ID, TWILIO_TOKEN, TWILIO_PHONE } from '../global/en
 import twilio from 'twilio';
 import { IContact } from '../interfaces/contacs.interfaces';
 import { IPlayGeo } from '../interfaces/body_playGeo.interface';
+import { IMonitor } from '../interfaces/monitor.interface';
 const cryptr = new Cryptr(ENCRYPT_KEY);
 
 const clientTwilio = twilio( TWILIO_ID , TWILIO_TOKEN);
@@ -52,13 +53,16 @@ export const configOsID = ( client: Socket ) => {
 
 export const singUser = ( client: Socket, io: SocketIO.Server ) => {
     client.on('sing-user', (payload: IUserSocket, callback: Function) => {
+
+        const userIO = listUser.onFindUser( client.id );
+        const osID = payload.osID === '' ? userIO.osID : payload.osID;
         const ok = listUser.onSingUser( client.id,
                                         payload.pkUser,
                                         payload.userName,
                                         payload.nameComplete,
                                         payload.role,
                                         payload.device,
-                                        payload.osID || '',
+                                        osID,
                                         payload.pkCategory || 0,
                                         payload.codeCategory || '',
                                         payload.occupied || false
@@ -88,7 +92,7 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
         io.in( client.id ).emit('sing-success', { ok: true, message: 'Socket configurado 🙂' } );
 
         console.log('clientes configurados', listUser.onGetUsers());
-        onSingSocketDB(payload.pkUser, payload.osID, true).then( (resSql) => {
+        onSingSocketDB(payload.pkUser, osID, true).then( (resSql) => {
 
             callback({
                 ok: true, 
@@ -104,6 +108,38 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
                 error
             });
         });
+    });
+};
+
+export const singMonitor = ( client: Socket ) => {
+    client.on( 'sing-monitor', (payload: IMonitor, callback: Function) => {
+        if ( !payload.pkService || payload.pkService === 0 ) {
+            return callback({
+                ok: false,
+                error: {
+                    message: 'Este abduzcan no es válido 🖤💥'
+                }
+            });
+        }
+        
+        client.join( `MONITOR-${ payload.pkService }`, (err: any) => {
+            if (err) {
+                return callback({
+                    ok: false,
+                    error: {
+                        message: 'Error al agregar a sala de monitoreo 💥'
+                    }
+                });
+            }
+
+            return callback({
+                ok: true,
+                error: {
+                    message: 'socket monitor configurado con éxito 🙂'
+                }
+            });
+        });
+        
     });
 };
 
@@ -168,13 +204,13 @@ export const logoutUser = ( client: Socket, io: SocketIO.Server, sizePather: num
 
         if (role === 'DRIVER_ROLE') {
             
-            const indexParent = h3.h3ToParent( indexHex , sizePather);
+            // const indexParent = h3.h3ToParent( indexHex , sizePather);
             
             // extraer los indices hijos del indice padre
-            const indexChildren: string[] = h3.h3ToChildren( indexParent , sizeChildren);
+            const indexChildren: string[] = h3.kRing( indexHex , 1);
 
-            indexChildren.forEach( (indexHex) => {
-                io.in( `${ indexHex }-client` ).emit( 'logout-driver', { pkUser } );
+            indexChildren.forEach( (iChildren) => {
+                io.in( `${ iChildren }-client` ).emit( 'logout-driver', { pkUser } );
             });
 
         }
@@ -212,6 +248,15 @@ export const disconnectUser = ( client: Socket, io: SocketIO.Server ) => {
                 console.error('Ocurrio un error al eliminar usuario de la sala', userDelete.role);
             }
         });
+        
+        if (userDelete.pkService !== 0) {
+            client.leave( `MONITOR-${ userDelete.pkService }`, (err: any) => {
+                if (err) {
+                    console.error('Ocurrio un error al eliminar usuario de la sala de monitoreo');
+                }
+            });
+        }
+
     });
 };
 
@@ -256,13 +301,13 @@ export const changePlayGeo = ( client: Socket, io: SocketIO.Server, sizePather: 
         if (!payload.value) {            
             io.in('WEB').emit('driver-off', { pkUser: userIO.pkUser });
 
-            const indexParent = h3.h3ToParent( userIO.indexHex , sizePather);
+            // const indexParent = h3.h3ToParent( userIO.indexHex , sizePather);
             
             // extraer los indices hijos del indice padre
-            const indexChildren: string[] = h3.h3ToChildren( indexParent , sizeChildren);
+            const indexChildren: string[] = h3.kRing( userIO.indexHex , 1);
 
-            indexChildren.forEach( (indexHex) => {
-                io.in( `${ indexHex }-client` ).emit( 'driver-off', { pkUser: userIO.pkUser } );
+            indexChildren.forEach( (iChildren) => {
+                io.in( `${ iChildren }-client` ).emit( 'driver-off', { pkUser: userIO.pkUser } );
             });
 
             // io.in('CLIENT_ROLE').emit('driver-off', { pkUser: userIO.pkUser });
@@ -289,20 +334,20 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
 
     client.on('new-service', ( payload: IPayloadServiceNew, callback: Function ) => {
 
-        const indexHexService = h3.geoToH3( payload.coords.lat, payload.coords.lng, radiusPentagon );
+        const indexHex = h3.geoToH3( payload.coords.lat, payload.coords.lng, radiusPentagon );
 
         // extraemos las coordenadas de los vértices del polígono
-        const polygon = h3.h3ToGeoBoundary( indexHexService, false );
+        const polygon = h3.h3ToGeoBoundary( indexHex, false );
         // extraemos las coordenadas del centro del polígono
-        const center = h3.h3ToGeo( indexHexService );
+        const center = h3.h3ToGeo( indexHex );
 
-        const drivers = listUser.onFindDriversHex( indexHexService );
+        const drivers = listUser.onFindDriversHex( indexHex );
 
         // obtener el padre de la ubicación dada en un radio mas grande
-        const indexParent = h3.h3ToParent( indexHexService , radiusPather);
+        // const indexParent = h3.h3ToParent( indexHex , radiusPather);
 
         // extraer los indices hijos de un pentágono con radio 6 del indice padre
-        const indexChildren: string[] = h3.h3ToChildren( indexParent , radiusPentagon);
+        const indexChildren: string[] = h3.kRing( indexHex , 1);
 
         // notificar a los conductores ue se encuentren en los índices hijos
 
@@ -310,12 +355,12 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             data: payload.data,
             polygon,
             center,
-            indexHex: indexHexService,
+            indexHex,
             totalDrivers: drivers.length
         };
 
         let payloadPanel = {
-            indexHex: indexHexService,
+            indexHex,
             polygon,
             center,
             totalDrivers: drivers.length
@@ -330,10 +375,10 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             case 'BASIC':
                 
                 // notificamos a todos los conductores en los pentagonos hijos
-                indexChildren.forEach( indexHexChildren => {
-                    io.in( indexHexChildren ).emit( 'new-service', payloadEmit );
+                indexChildren.forEach( iChildren => {
+                    io.in( iChildren ).emit( 'new-service', payloadEmit );
                     
-                    const osIds = listUser.onOsDriversHex( indexHexChildren );
+                    const osIds = listUser.onOsDriversHex( iChildren );
                     outDrivers.push( ...osIds );
 
                 });
@@ -343,12 +388,12 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 break;
             case 'STANDAR':
                 
-                indexChildren.forEach( indexHexChildren => {
-                    io.in( `${ indexHexChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
-                    io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                indexChildren.forEach( iChildren => {
+                    io.in( `${ iChildren }-STANDAR` ).emit( 'new-service', payloadEmit );
+                    io.in( `${ iChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
                     
-                    const osIdsST = listUser.onOsDriversCatHex( indexHexChildren, 'STANDAR' );
-                    const osIdsPR = listUser.onOsDriversCatHex( indexHexChildren, 'PREMIUM' );
+                    const osIdsST = listUser.onOsDriversCatHex( iChildren, 'STANDAR' );
+                    const osIdsPR = listUser.onOsDriversCatHex( iChildren, 'PREMIUM' );
                     outDrivers.push( ...osIdsST );
                     outDrivers.push( ...osIdsPR );
 
@@ -360,10 +405,10 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
             case 'PREMIUM':
                 
                 // notificamos a todos los conductores en los pentagonos hijos
-                indexChildren.forEach( indexHexChildren => {
-                    io.in( `${ indexHexChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
+                indexChildren.forEach( iChildren => {
+                    io.in( `${ iChildren }-PREMIUM` ).emit( 'new-service', payloadEmit );
 
-                    const osIdsPR = listUser.onOsDriversCatHex( indexHexChildren, 'PREMIUM' );
+                    const osIdsPR = listUser.onOsDriversCatHex( iChildren, 'PREMIUM' );
                     outDrivers.push( ...osIdsPR );
                 });
                 driverNotify = drivers.filter( driver => driver.category === 'PREMIUM' );
@@ -498,27 +543,26 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
 
         const user = listUser.onFindUser( client.id );
         const oldIndex = user.indexHex;
-        const oldCategory = user.category;
+        const category = user.category;
         const indexHex = user.onUpdateCoords( payload.lat, payload.lng, radiusPentagon );
-        const roomIndex = indexHex;
-        const roomIndexCategory = `${ roomIndex }-${ oldCategory }`;
-        const oldRoomIndexCategory = `${ oldIndex }-${ oldCategory }`
+        const roomIndexCategory = `${ indexHex }-${ category }`;
+        const oldRoomIndexCategory = `${ oldIndex }-${ category }`
         // agregar al usuario a la sala con el indice del pentágono en el que se encuentra
         // user.indexHex = indexHex;
 
-        if (oldIndex !== roomIndex) {
+        if (oldIndex !== indexHex) {
 
             if (oldIndex !== '') {                
                 client.leave( oldIndex, (err: any) => {
                     if (err) {
-                        console.error(`Error al expulsar a ${ user.userName } de la sala ${ roomIndex }`);
+                        console.error(`Error al expulsar a ${ user.userName } de la sala ${ indexHex }`);
                     }
                 });
             }
 
-            client.join( roomIndex, (err: any) => {
+            client.join( indexHex, (err: any) => {
                 if (err) {
-                    console.error(`Error al agregar a ${ user.userName } en la sala ${ roomIndex }`);
+                    console.error(`Error al agregar a ${ user.userName } en la sala ${ indexHex }`);
                 }
             });
 
@@ -527,7 +571,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
         
         if (oldRoomIndexCategory !== roomIndexCategory) {
 
-            if (oldCategory !== '') {
+            if (category !== '') {
                 
                 client.leave( oldRoomIndexCategory, (err: any) => {
                     if (err) {
@@ -552,22 +596,23 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
                                     nameComplete: user.nameComplete,
                                     codeCategory: user.category
                                 };
-        if (user.pkUser !== 0 && user.playGeo ) {            
+        if (user.pkUser !== 0 && user.playGeo ) {          
             io.in('WEB').emit('current-position-driver', payloadPosition);
+
             // emitiendo coords a clientes vecinos
             const arrChildren: string[] = h3.kRing( indexHex , 1);
             arrChildren.forEach( (indexChildren) => {
                 const roomClient = `${ indexChildren }-client`;
-                const roomCategClient = `${ indexChildren }-${oldCategory}-client`;
+                const roomCategClient = `${ indexChildren }-${category}-client`;
                 io.in( roomClient ).emit( 'current-position-driver', payloadPosition );
-                io.in( roomCategClient ).emit( `current-position-driver-${ oldCategory }`, payloadPosition );
+                io.in( roomCategClient ).emit( `current-position-driver-${ category }`, payloadPosition );
             });
 
             // emitiendo coords a clientes esperando taxistas
-            io.in( `${ roomIndex }-client` ).emit( 'current-position-driver', payloadPosition );
-            io.in( `${ roomIndexCategory }-client` ).emit( `current-position-driver-${ oldCategory }`, payloadPosition );
+            io.in( `${ indexHex }-client` ).emit( 'current-position-driver', payloadPosition );
+            io.in( `${ roomIndexCategory }-client` ).emit( `current-position-driver-${ category }`, payloadPosition );
 
-            onUpdateCoords( user.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
+            onUpdateCoords( user.pkUser, payload.lat, payload.lng, indexHex ).then( (resSql) => {
                 
                 // notificar a clients cercanos a la ubicación, y al panel web
                 return callback({
@@ -589,6 +634,7 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
         } else {
             callback({
                 ok: false,
+                indexHex,
                 error: {
                     message: `Conductor no activo su ubicación`
                 },
@@ -597,7 +643,6 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
 
         }
 
-        
     });
 
 };
@@ -818,7 +863,16 @@ export const currentPositionService = ( client: Socket, io: SocketIO.Server, rad
             codeCategory: driverIO.category
         };
 
+        const payloadMonitor = {
+            lat: payload.lat,
+            lng: payload.lng
+        };
+
         io.in('WEB').emit('current-position-driver', payloadPosition);
+
+        if (payload.pkService && payload.pkService !== 0) {                
+            io.in(`MONITOR-${ payload.pkService }`).emit('current-position-driver', payloadMonitor);
+        }
         // emitiendo coords a cliente del servicio
         io.in( clientSocket.id ).emit('current-position-driver', payload);
 

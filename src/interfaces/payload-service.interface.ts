@@ -7,6 +7,7 @@ export interface IWatchGeo {
     minutesText: string;
     distance: number;
     minutes: number;
+    pkService: number;
 }
 
 

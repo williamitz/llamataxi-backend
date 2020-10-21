@@ -60,14 +60,15 @@ export let verifyTokenMonitor = ( req: any, res: Response, next: NextFunction ) 
     jwt.verify( token, SEED_KEY, (error: any, decoded: any) => {
 
         if (error) {
-            return res.status(401).json({
+            // .status(401)
+            return res.json({
                 ok: false,
                 error
             });
         }
-        
+        //.status(401)
         if ( !decoded.dataMonitor || !decoded.dataMonitor.pkService ) {
-            return res.status(401).json({
+            return res.json({
                 ok: false,
                 error: {
                     message: 'Junior como hacker te vas a morir de hambre 🖕💀🖕'

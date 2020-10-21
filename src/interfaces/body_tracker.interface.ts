@@ -7,4 +7,5 @@ export interface ITracker {
     minutesText?: string;
     distance?: number;
     minutes?: number;
+    pkService: number;
 }

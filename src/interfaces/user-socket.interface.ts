@@ -16,6 +16,7 @@ export interface IUserSocket {
     lat: number;
     lng: number;
     codeCategory?: string;
+    pkService?: number;
   }
 
   export interface IConfigOs {

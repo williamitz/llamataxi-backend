@@ -42,7 +42,8 @@ export class ListUserSockets {
                 coords: {lat: 0, lng: 0},
                 onUpdateCoords() { return ''; },
                 occupied: false,
-                playGeo: false
+                playGeo: false,
+                pkService: 0
                 // onUpdateCategory() { return false }
             };
         }
@@ -77,11 +78,25 @@ export class ListUserSockets {
         finded.nameComplete = nameComplete;
         finded.timer = new Date().getTime();
         finded.device = device;
-        finded.osID = osID;
+
+        if (osID !== '') {
+            finded.osID = osID;
+        }
+
         finded.pkCategory = pkCategory;
         finded.category = codeCategory;
         finded.occupied = occupied;
         return true;
+    }
+
+    onSingMonitor( id: string, pkService: number ) {
+        const finded = this.listUser.find( user => user.id === id  );
+        if (!finded) {
+            console.error('No se encontró usuario socket');
+            return false;
+        }
+
+        finded.pkService = pkService;
     }
 
     onConfigOs( id: string, osId: string ) {
@@ -190,7 +205,8 @@ export class ListUserSockets {
                 coords: {lat: 0, lng: 0},
                 occupied: false,
                 onUpdateCoords() { return ''; },
-                playGeo: false
+                playGeo: false,
+                pkService: 0
                 // onUpdateCategory() { return false }
             };
         }
@@ -226,7 +242,8 @@ export class ListUserSockets {
                 coords: {lat: 0, lng: 0},
                 occupied: false,
                 onUpdateCoords() { return ''; },
-                playGeo: false
+                playGeo: false,
+                pkService: 0
                 // onUpdateCategory() { return false }
             };
         }

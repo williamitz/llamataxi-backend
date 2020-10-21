@@ -18,20 +18,32 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
     console.log('Recibiendo tracker post', body);
 
     const user = listUser.onFindUserForPk( fkUser );
+    const codeCategory = user.category;
     const indexHex = user.onUpdateCoords( body.lat, body.lng, mainServer.radiusPentagon );
 
     //emitiendo coordenadas al panel para el monitoreo
-    const payloadPosition = { 
-                                pkUser: user.pkUser,
-                                coords: body,
-                                lat: body.lat,
-                                lng: body.lng,
-                                occupied: user.occupied ,
-                                nameComplete: user.nameComplete,
-                                codeCategory: user.category
-                            };
+    const payloadPosition = {
+        pkUser: user.pkUser,
+        coords: body,
+        lat: body.lat,
+        lng: body.lng,
+        occupied: user.occupied ,
+        nameComplete: user.nameComplete,
+        codeCategory
+    };
+    
+    const payloadMonitor = {
+        lat: body.lat,
+        lng: body.lng
+    };
+
     if (user.pkUser !== 0 && user.playGeo ) {
         mainServer.io.in('WEB').emit('current-position-driver', payloadPosition);
+        
+        if (body.pkService && body.pkService !== 0) {                
+            mainServer.io.in(`MONITOR-${ body.pkService }`).emit('current-position-driver', payloadMonitor);
+        }
+
     }
     
     if (user.pkUser !== 0 && !user.occupied) {

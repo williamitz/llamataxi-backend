@@ -29,6 +29,19 @@ server.onRun( (error: any) => {
         server.loadPercentRate();
     }, 2000);
     
+    // const arrChildren: any[] = h3.kRing( '878e62cecffffff' , 7);
+    // const plygons: any = [];
+
+    // arrChildren.forEach( iChildren => {
+    //     // extraemos las coordenadas de los vértices del polígono
+    //     let polygon = h3.h3ToGeoBoundary( iChildren, false );
+    //     // extraemos las coordenadas del centro del polígono
+    //     let center = h3.h3ToGeo( iChildren );
+    //     plygons.push( {polygon, center} );
+    //     console.log('aristas', polygon);
+    // });
+    // console.log('Vecinos de un centro dado kring', arrChildren);
+    // console.log('Polygonos', plygons);
 });
 
 // console.log('clave', bcrypt.hashSync('Gamaniel1', 10));

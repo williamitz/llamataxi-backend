@@ -51,6 +51,7 @@ export default class MainServer {
             mainSocket.connectUser( client );
             mainSocket.disconnectUser( client, this.io );
             mainSocket.singUser( client, this.io  );
+            mainSocket.singMonitor( client );
             mainSocket.configOsID( client );
             mainSocket.logoutUser( client, this.io, this.radiusPather, this.radiusPentagon );
             mainSocket.sendNotify( client, this.io );
