@@ -16,7 +16,7 @@ let MysqlCon = MysqlClass.instance;
 
 culquiRouter.post('/Culqui/Token', [verifyToken] ,( req: Request, res: Response) => {
     
-    let body: ICulquiToken = req.body;
+    let body: any = req.body;
 
     // Make a request for a user with a given ID
     axios.post( url_base + `/v2/tokens`, body, { headers: { Authorization: 'Bearer << llave_publica >>' } })

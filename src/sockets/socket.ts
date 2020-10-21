@@ -40,7 +40,7 @@ export const configOsID = ( client: Socket ) => {
                 }
             });
         }
-
+        // console.log('clientes configurados', listUser.onGetUsers());
         callback({
             ok: true, 
             data:{ 
@@ -121,7 +121,9 @@ export const singMonitor = ( client: Socket ) => {
                 }
             });
         }
-        
+
+        listUser.onSingMonitor( client.id, payload.pkService );
+        console.log('cliente monitor config', listUser.onGetUsers());
         client.join( `MONITOR-${ payload.pkService }`, (err: any) => {
             if (err) {
                 return callback({
@@ -617,8 +619,8 @@ export const currentPosDriver = ( client: Socket, io: SocketIO.Server, radiusPen
                 // notificar a clients cercanos a la ubicación, y al panel web
                 return callback({
                     ok: true,
-                    message: `Se actualizo coordenadas, pendiente notificar ${ roomIndex } - ${ roomIndexCategory }`,
-                    indexHex: roomIndex,
+                    message: `Se actualizo coordenadas, pendiente notificar ${ indexHex } - ${ roomIndexCategory }`,
+                    indexHex,
                     data: resSql.data
                 });
     

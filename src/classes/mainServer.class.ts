@@ -41,8 +41,8 @@ export default class MainServer {
         this.pkJournal = 0;
         this.nameJournal = '';
         this.percentRate = 0;
-        this.radiusPentagon = 7;
-        this.radiusPather = 5;
+        this.radiusPentagon = 6;
+        this.radiusPather = 4;
         this.intervalJorunal = setInterval(() => {}, 60000);
     }
 

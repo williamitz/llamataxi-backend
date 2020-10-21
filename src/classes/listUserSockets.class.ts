@@ -97,6 +97,8 @@ export class ListUserSockets {
         }
 
         finded.pkService = pkService;
+        finded.role = 'MONITOR';
+        finded.userName = '';
     }
 
     onConfigOs( id: string, osId: string ) {
