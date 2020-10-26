@@ -26,6 +26,8 @@ import TaxiRouter from './taxi-service.route';
 import HistoryRouter from "./history.route";
 import StatRouter from "./statistics.route";
 import RestoreRouter from "./restore.route";
+import ReferalRouter from "./configReferal.route";
+import CouponRouter from "./coupon.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -57,7 +59,8 @@ MainRouter.use( TrackerRouter );
 MainRouter.use( HistoryRouter );
 MainRouter.use( StatRouter );
 MainRouter.use( RestoreRouter );
-
+MainRouter.use( ReferalRouter );
+MainRouter.use( CouponRouter );
 
 
 export default MainRouter;
