@@ -1,11 +1,11 @@
 export interface ICoupon {
     pkCoupon: number;
     codeCoupon: string;
-    title: string;
-    description: string;
+    titleCoupon: string;
+    descriptionCoupon: string;
     minRateService: number;
     amountCoupon: number;
     dateExpiration: string;
     daysExpiration: number;
-    role: string;
+    roleCoupon: string;
 }

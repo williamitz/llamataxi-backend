@@ -69,11 +69,13 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
     let body: IBodyUser = req.body; 
 
     let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+    let nameUpper = body.name.toUpperCase();
+    let surnameUpper = body.surname.toUpperCase();
 
     let sql = `CALL as_sp_addDriver(${ body.fkTypeDocument }`;
     sql += `, ${ body.fkNationality }`;
-    sql += `, '${ body.name }'`;
-    sql += `, '${ body.surname }'`;
+    sql += `, '${ nameUpper.trim() }'`;
+    sql += `, '${ surnameUpper.trim() }'`;
     sql += `, '${ body.document }' `;
     sql += `, ${ body.verifyReniec } `;
     sql += `, '${ body.email }' `;

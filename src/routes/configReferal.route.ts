@@ -38,6 +38,8 @@ ReferalRouter.post('/ConfigReferal', [verifyToken, verifyWebmasterRole], (req: a
     let sql = `CALL rb_sp_updateConfig(`;
     sql += `${ body.bonnusClient }, `;
     sql += `${ body.bonnusDriver }, `;
+    sql += `${ body.daysExpClient }, `;
+    sql += `${ body.daysExpDriver }, `;
     sql += `${ pkUserToken }, `;
     sql += `'${ reqIp.getClientIp( req ) }');`;
 
