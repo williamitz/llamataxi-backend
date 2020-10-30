@@ -49,7 +49,7 @@ NavChildrenRouter.get( "/NavChildren/Get", [verifyToken], (req: Request, res: Re
     });
   }
 );
-NavChildrenRouter.get("/NavChildren/GetAll", (req: Request, res: Response) => {
+NavChildrenRouter.get("/NavChildren/GetAll", [verifyToken], (req: Request, res: Response) => {
   let sql = `CALL as_sp_getListNavChildrenAll();`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {
@@ -112,7 +112,7 @@ NavChildrenRouter.put( "/NavChildren/Update/:id", [verifyToken, verifyWebmasterR
 
 NavChildrenRouter.delete(
   "/NavChildren/Delete/:id/:statusRegister",
-  //[verifyToken, verifyWebmasterRole],
+  [verifyToken, verifyWebmasterRole],
   (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;

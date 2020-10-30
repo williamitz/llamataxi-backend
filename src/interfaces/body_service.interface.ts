@@ -37,6 +37,11 @@ export interface IBodyService {
     aliasCategory: string;
     changeRate: boolean;
     pkOfferService: number;
+
+    // descuentos
+    fkCouponUser: number;
+    discount: number;
+    discountType: string;
 }
 
 export interface ICoords {

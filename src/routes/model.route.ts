@@ -138,7 +138,7 @@ ModelRouter.put("/Model/Update/:id", [verifyToken], (req: any, res: Response) =>
 });
 
 ModelRouter.delete(
-  "/Model/Delete/:id/:statusRegister",
+  "/Model/Delete/:id/:statusRegister", [verifyToken],
   (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;

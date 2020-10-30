@@ -8,7 +8,7 @@ let MenuRoleRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-MenuRoleRouter.get("/MenuRole/Get", (req: Request, res: Response) => {
+MenuRoleRouter.get("/MenuRole/Get", [verifyToken], (req: Request, res: Response) => {
   let page = req.query.page || 1;
   let qNav = req.query.qNav || '';
   let qRole = req.query.qRole || '';
@@ -46,7 +46,7 @@ MenuRoleRouter.get("/MenuRole/Get", (req: Request, res: Response) => {
   });
 });
 
-MenuRoleRouter.post("/MenuRole/Add", (req: any, res: Response) => {
+MenuRoleRouter.post("/MenuRole/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyMenuRole = req.body;
 
   let pkUserToken = 1; //req.userData.pkUser || 0;
@@ -71,7 +71,7 @@ MenuRoleRouter.post("/MenuRole/Add", (req: any, res: Response) => {
   });
 });
 
-MenuRoleRouter.put("/MenuRole/Update/:id", (req: any, res: Response) => {
+MenuRoleRouter.put("/MenuRole/Update/:id", [verifyToken], (req: any, res: Response) => {
   let body: IBodyMenuRole = req.body;
 
   let pkParam = req.params.id || 0;
@@ -98,7 +98,7 @@ MenuRoleRouter.put("/MenuRole/Update/:id", (req: any, res: Response) => {
   });
 });
 
-MenuRoleRouter.delete( "/MenuRole/Delete/:id/:statusRegister", (req: Request, res: Response) => {
+MenuRoleRouter.delete( "/MenuRole/Delete/:id/:statusRegister", [verifyToken], (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
     let pkUserToken = 1; //req.userData.pkUser || 0;

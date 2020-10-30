@@ -69,6 +69,16 @@ TaxiRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Respons
 TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     let body: IBodyService = req.body;
     let fkUser = req.userData.pkUser || 0;
+    let discountValid = ['NONEDD', 'COUPON', 'CREDIT'];
+
+    if ( !discountValid.includes( body.discountType ) ) {
+        return res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Los descuentos válidos son ' + discountValid.join(', ')
+            }
+        });
+    }
     
     let indexHex = h3.geoToH3( body.coordsOrigin.lat, body.coordsOrigin.lng, Server.radiusPentagon );
 
@@ -87,15 +97,19 @@ TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res:
     sql += `'${ body.distanceText }', `;
     sql += `${ body.minutes }, `;
     sql += `'${ body.minutesText }', `;
-
     sql += `${ body.rateHistory }, `;
     sql += `${ body.rateService }, `;
+
     sql += `${ body.minRate }, `;
     sql += `${ body.minRatePercent }, `;
     sql += `${ body.isMinRate }, `;
-    
     sql += `'${ body.paymentType }', `;
     sql += `'${ indexHex }', `;
+
+    // descuentos
+    sql += `${ body.fkCouponUser }, `;
+    sql += `${ body.discount }, `;
+    sql += `'${ body.discountType }', `;
 
     sql += `${ fkUser }, `;
     sql += `'${ reqIp.getClientIp( req ) }' );`;
@@ -109,10 +123,6 @@ TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res:
             });
         }
 
-        if (data[0].showError === 0) {
-            // si todo se hizo correctamente notificamos al panel un nuevo servicio
-            Server.io.in( 'WEB' ).emit( 'current-new-service', {pkservice: data[0].pkService} )
-        }
 
         res.json({
             ok: true,

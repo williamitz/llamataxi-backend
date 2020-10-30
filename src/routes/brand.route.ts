@@ -8,7 +8,7 @@ let BrandRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-BrandRouter.get("/Brand/Get", (req: Request, res: Response) => {
+BrandRouter.get("/Brand/Get", [verifyToken], (req: Request, res: Response) => {
   let page = Number( req.query.page ) || 1;
   let qCategory = req.query.qCategory || "";
   let qBrand = req.query.qBrand || "";
@@ -44,7 +44,7 @@ BrandRouter.get("/Brand/Get", (req: Request, res: Response) => {
   });
 });
 
-BrandRouter.get("/Brand/GetAll", (req: Request, res: Response) => {
+BrandRouter.get("/Brand/GetAll", [verifyToken], (req: Request, res: Response) => {
 
   let fkCategory = req.query.fkCategory || 0;
 
@@ -67,7 +67,7 @@ BrandRouter.get("/Brand/GetAll", (req: Request, res: Response) => {
   });
 
 });
-BrandRouter.post("/Brand/Add", (req: any, res: Response) => {
+BrandRouter.post("/Brand/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyBrand = req.body;
   let pkUserToken = 1; //req.userData.pkUser || 0;
 
@@ -91,7 +91,7 @@ BrandRouter.post("/Brand/Add", (req: any, res: Response) => {
   });
 });
 
-BrandRouter.put("/Brand/Update/:id", (req: any, res: Response) => {
+BrandRouter.put("/Brand/Update/:id", [verifyToken], (req: any, res: Response) => {
   let body: IBodyBrand = req.body;
 
   let pkParam = req.params.id || 0;
@@ -119,7 +119,7 @@ BrandRouter.put("/Brand/Update/:id", (req: any, res: Response) => {
 });
 
 BrandRouter.delete(
-  "/Brand/Delete/:id/:statusRegister",
+  "/Brand/Delete/:id/:statusRegister", [verifyToken],
   (req: Request, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;

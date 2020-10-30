@@ -13,7 +13,7 @@ const Mysql = MysqlClass.instance;
 let UploadRoutes = Router();
 UploadRoutes.use( fileUpload() );
 
-UploadRoutes.put('/upload/:module/:id/', verifyToken , (req: Request, res: Response) => {
+UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Response) => {
     
     let module = req.params.module.toLocaleLowerCase() || '';
     let idEntity = Number( req.params.id ) || 0;

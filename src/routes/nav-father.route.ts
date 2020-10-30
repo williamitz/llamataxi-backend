@@ -116,7 +116,7 @@ NavFatherRouter.delete( "/NavFather/Delete/:id/:statusRegister", [verifyToken], 
   }
 );
 
-NavFatherRouter.get("/NavFather/GetAll", (req: any, res: Response) => {
+NavFatherRouter.get("/NavFather/GetAll", [verifyToken], (req: any, res: Response) => {
   let sql = `CALL as_sp_getListNavFatherAll();`;
   MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
     if (error) {

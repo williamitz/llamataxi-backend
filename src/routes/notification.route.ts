@@ -8,7 +8,7 @@ let NotificationRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-NotificationRouter.get("/Notification/Get", (req: Request, res: Response) => {
+NotificationRouter.get("/Notification/Get", [verifyToken], (req: Request, res: Response) => {
   let page = req.query.page || 1;
   let fkUserEmisor = req.query.fkUserEmisor || "";
   let fkUserReceptor = req.query.fkUserReceptor || "";
@@ -96,7 +96,7 @@ NotificationRouter.post("/Notification/Add", [verifyToken], (req: any, res: Resp
   });
 });
 
-NotificationRouter.put( "/Notification/Update/:id", (req: any, res: Response) => {
+NotificationRouter.put( "/Notification/Update/:id", [verifyToken], (req: any, res: Response) => {
 
     let body: IBodyNotification = req.body;
 
@@ -126,6 +126,7 @@ NotificationRouter.put( "/Notification/Update/:id", (req: any, res: Response) =>
 
 NotificationRouter.delete(
   "/Notification/Delete/:id/:statusRegister",
+  [verifyToken],
   (req: any, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
@@ -196,4 +197,5 @@ NotificationRouter.put('/Notification/Readed/:id', [verifyToken], (req: any, res
   });
 
 });
+
 export default NotificationRouter;
