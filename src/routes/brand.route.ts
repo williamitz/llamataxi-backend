@@ -67,9 +67,10 @@ BrandRouter.get("/Brand/GetAll", [verifyToken], (req: Request, res: Response) =>
   });
 
 });
+
 BrandRouter.post("/Brand/Add", [verifyToken], (req: any, res: Response) => {
   let body: IBodyBrand = req.body;
-  let pkUserToken = 1; //req.userData.pkUser || 0;
+  let pkUserToken = req.userData.pkUser || 0;
 
   let sql = `CALL as_sp_addBrand( ${body.fkCategory},    
     '${body.nameBrand}',
