@@ -57,4 +57,6 @@ export interface IBodyOffer {
     fkDriver: number;
     fkVehicle: number;
     indexHex: string;
+    fkJournal?: number;
+    codeJournal?: string;
 }

@@ -290,7 +290,9 @@ TaxiRouter.post('/Service/NewOffer', [verifyToken, verifyDriverClientRole], (req
     sql += `${ body.rateOffer }, `;
     sql += `${ body.isClient }, `;
     sql += `${ body.fkDriver }, `;
-    sql += `${ body.fkVehicle }`;
+    sql += `${ body.fkVehicle },`;
+    sql += `${ body.fkJournal || 0 },`;
+    sql += `'${ body.codeJournal || '' }'`;
     sql += `);`;
     
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
@@ -721,5 +723,41 @@ TaxiRouter.get('/Waiting/Driver', [verifyToken, verifyClientRole], (req: any, re
 
 });
 
+TaxiRouter.post('/Service/UpdateJournal', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+    
+    let body = req.body;
+    let fkUser = req.userData.pkUser || 0;
+    let fkDriver = req.query.pkdriver || 0;
+
+    /**
+     * IN `InPkService` bigint,
+        IN `InFkOffer` bigint,
+        IN `InFkDriver` int,
+        IN `InFkUser` int
+     */
+
+    let sql = `CALL ts_sp_updateJournal( `;
+    sql += `${ body.pkService }, `;
+    sql += `${ body.fkOffer }, `;
+    sql += `${ fkDriver }, `;
+    sql += `${ fkUser } );`;
+
+    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    });
+});
 
 export default TaxiRouter;
