@@ -29,6 +29,7 @@ import RestoreRouter from "./restore.route";
 import ReferalRouter from "./configReferal.route";
 import CouponRouter from "./coupon.route";
 import CJouRouter from "./configJournal.route";
+import JDriverRouter from "./journalDriver.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -63,7 +64,6 @@ MainRouter.use( RestoreRouter );
 MainRouter.use( ReferalRouter );
 MainRouter.use( CouponRouter );
 MainRouter.use( CJouRouter );
-
-
+MainRouter.use( JDriverRouter );
 
 export default MainRouter;

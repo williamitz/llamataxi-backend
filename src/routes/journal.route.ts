@@ -85,6 +85,7 @@ JournalRouter.post("/Journal/Add", [verifyToken], (req: any, res: Response) => {
       data: data[0],
     });
   });
+  
 });
 
 JournalRouter.put("/Journal/Update/:id", [verifyToken], (req: any, res: Response) => {
