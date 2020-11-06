@@ -345,9 +345,6 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
 
         const drivers = listUser.onFindDriversHex( indexHex );
 
-        // obtener el padre de la ubicación dada en un radio mas grande
-        // const indexParent = h3.h3ToParent( indexHex , radiusPather);
-
         // extraer los indices hijos de un pentágono con radio 6 del indice padre
         const indexChildren: string[] = h3.kRing( indexHex , 1);
 

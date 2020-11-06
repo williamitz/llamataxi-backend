@@ -227,6 +227,8 @@ CouponRouter.put('/Coupon/Valid/:code', [verifyToken, verifyDriverClientRole], (
     sql += `${ pkUserToken }, `;
     sql += `'${ reqIp.getClientIp( req ) }');`;
 
+    console.log(sql);
+
     MysqlCon.onExecuteQuery( sql, ( error: any, data: any[] ) => {
 
         if (error) {

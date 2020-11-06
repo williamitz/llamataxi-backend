@@ -7,6 +7,7 @@ import * as mainSocket from '../sockets/socket';
 import moment from 'moment' ;
 import IJournalDB from '../interfaces/journal_db.interface';
 import MysqlClass from './mysqlConnect.class';
+import { IRateJournal } from '../interfaces/rateForJournal.interface';
 // declare var moment: any;
 
 let MysqlCon = MysqlClass.instance;
@@ -23,6 +24,7 @@ export default class MainServer {
     private _httpServer: http.Server;
     private journal: string;
     private journal_db: IJournalDB[];
+    private rateJournal_db: IRateJournal[];
     private pkJournal: number;
     private nameJournal: string;
 
@@ -38,6 +40,7 @@ export default class MainServer {
         this.listenSockets();
         this.journal = 'NOCTURN';
         this.journal_db = [];
+        this.rateJournal_db = [];
         this.pkJournal = 0;
         this.nameJournal = '';
         this.percentRate = 0;
@@ -90,17 +93,39 @@ export default class MainServer {
 
     }
 
-    public loadPercentRate() {
-        MysqlCon.onExecuteQuery('CALL ts_sp_getPercentRate();', (error: any, data: any[]) => {
+    public loadRateJournal( journal: IJournalDB ) {
+
+        let sql = `CALL ts_sp_getRateForJournal(${ this.pkJournal });`;
+        MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
             if (error) {
-                return console.log('Error en base de datos al listar el porcentaje de tarifa', error);
+                return console.log('Error en base de datos al listar tarifa segun la hora', error);
             }
 
             let dataString = JSON.stringify(data);
             let json = JSON.parse(dataString);
-            this.percentRate = json[0].percentRate || 0;
+            this.rateJournal_db = json;
+
+            journal.rates = json;
+            console.log('notificando con socket', journal);
+            this.io.to('MOVILE').emit('change-journal', journal);
+            this.io.to('WEB').emit('change-journal', journal);
+        
         });
+
     }
+
+    // public loadPercentRate() {
+    //     MysqlCon.onExecuteQuery('CALL ts_sp_getPercentRate();', (error: any, data: any[]) => {
+    //         if (error) {
+    //             return console.log('Error en base de datos al listar el porcentaje de tarifa', error);
+    //         }
+
+    //         let dataString = JSON.stringify(data);
+    //         let json = JSON.parse(dataString);
+    //         this.percentRate = json[0].percentRate || 0;
+    //     });
+    // }
 
     private listenJournal() {
 
@@ -129,15 +154,15 @@ export default class MainServer {
                         
                 if ( ( hour >= hhStartDB && (minutes >= 0 || minutes <=  mmStartDB)) && ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
 
-                    this.pkJournal = journal.pkJournal;
-                    this.nameJournal = journal.nameJournal;
+                    
                     // console.log('jornada', journal.nameJournal);
 
-                    if (this.journal !== journal.codeJournal) {
-                        console.log('notificar con socket');
-                        this.io.to('MOVILE').emit('change-journal', journal);
-                        this.io.to('WEB').emit('change-journal', journal);
+                    if (this.pkJournal !== journal.pkJournal) {
+
+                        this.pkJournal = journal.pkJournal;
+                        this.nameJournal = journal.nameJournal;
                         this.journal = journal.codeJournal;
+                        this.loadRateJournal( journal );
                     }
                 }
             });

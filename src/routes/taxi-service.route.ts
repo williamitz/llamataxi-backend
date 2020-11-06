@@ -37,8 +37,8 @@ TaxiRouter.get('/Journal/GetForHour', [verifyToken], (req: Request, res: Respons
 
 TaxiRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Response) => {
     
-    const data = Server.getJournal();
-    if (data.pkJournal === 0) {
+    const dataJournal = Server.getJournal();
+    if (dataJournal.pkJournal === 0) {
         return res.status(400).json({
             ok: false,
             error: {
@@ -47,8 +47,8 @@ TaxiRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Respons
         });
     }
 
-    let sql = `CALL ts_sp_getRateForJournal(${ data.pkJournal });`;
-    MysqlCon.onExecuteQuery(sql, (error: any, dataRate: any[]) => {
+    let sql = `CALL ts_sp_getRateForJournal(${ dataJournal.pkJournal });`;
+    MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
         if (error) {
           return res.status(400).json({
@@ -59,10 +59,10 @@ TaxiRouter.get('/Rate/GetForJournal', [verifyToken], (req: Request, res: Respons
 
         res.json({
             ok: true,
-            data: [{ dataRate }],
+            data,
         });
     
-      });
+    });
                   
 });
 
@@ -473,7 +473,7 @@ TaxiRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any
 
     let fkUser = req.userData.pkUser || 0;
     let nameUser = req.userData.nameComplete || '';
-    let pkService = req.params.id || 0;
+    let pkService = Number( req.params.id ) || 0;
 
     let body = req.body;
 
@@ -493,13 +493,18 @@ TaxiRouter.put('/Service/Delete/:id', [verifyToken, verifyClientRole], (req: any
 
         if (data[0].showError === 0) {
             // obtener el padre de la ubicación dada en un radio mas grande
-            const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
+            // const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
             
             // extraer los indices hijos de un pentágono con radio 7 del indice padre
-            const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
+            const indexChildren: string[] = h3.kRing( body.indexHex , Server.radiusPentagon);
             const msg = `${ nameUser }, ha cancelado el servicio.`;
+            const payload = { 
+                pkService, 
+                msg, 
+                indexHex: body.indexHex 
+            };
             indexChildren.forEach( indexHex => {
-                Server.io.in( indexHex ).emit( 'disposal-service', { pkService, msg, indexHex: body.indexHex } );
+                Server.io.in( `${indexHex}-${ body.category }` ).emit( 'disposal-service', payload );
             });
 
             // notificar al panel que se eliminó un servicio
@@ -597,9 +602,9 @@ TaxiRouter.post('/Offer/Decline', [verifyToken, verifyDriverRole], (req: any, re
 
 TaxiRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (req: any, res: Response) => {
     // api donde se recahaza la oferta de un taxista
-    // let fkUser = req.userData.pkUser || 0;
+    let fkUser = req.userData.pkUser || 0;
     let body = req.body;
-    // let nameUser = req.userData.nameComplete || '';
+    let nameUser = req.userData.nameComplete || '';
     // cliente rechaza oferta de conductor
 
     let sql = `CALL ts_sp_declineOfferDriver(`;
@@ -619,26 +624,24 @@ TaxiRouter.post('/Offer/Decline/Client', [verifyToken, verifyClientRole], (req: 
         }
 
         // if (data[0].showError === 0) {
-        //     // obtener el padre de la ubicación dada en un radio mas grande
-        //     const indexParent = h3.h3ToParent( body.indexHex , Server.radiusPather);
             
         //     // extraer los indices hijos de un pentágono con radio 6 del indice padre
-        //     const indexChildren: string[] = h3.h3ToChildren( indexParent , Server.radiusPentagon);
-        //     const msg = `${ nameUser }, ha cancelado el servicio.`;
-        //     // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
-        //     indexChildren.forEach( indexHex => {
-        //         Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
-        //     });
+        //     // const indexChildren: string[] = h3.kRing( body.indexHex , Server.radiusPentagon);
+        //     // const msg = `${ nameUser }, ha cancelado el servicio.`;
+        //     // // Server.io.in( body.indexHex ).emit( 'client-cancel-service', { pkService, msg } );
+        //     // indexChildren.forEach( indexHex => {
+        //     //     Server.io.in( indexHex ).emit( 'disposal-service', { pkService: body.pkService, msg, indexHex: body.indexHex } );
+        //     // });
 
-            // notificar al panel que se eliminó un servicio
-            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
-            // const payloadWeb = {
-            //     pkService: body.pkService,
-            //     msg,
-            //     indexHex: body.indexHex,
-            //     pkClient: fkUser
-            // }
-            // Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb);
+        //     // // notificar al panel que se eliminó un servicio
+        //     // // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+        //     // const payloadWeb = {
+        //     //     pkService: body.pkService,
+        //     //     msg,
+        //     //     indexHex: body.indexHex,
+        //     //     pkClient: fkUser
+        //     // }
+        //     // Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb);
         // }
 
         res.json({

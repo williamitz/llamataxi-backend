@@ -26,7 +26,7 @@ server.onRun( (error: any) => {
     console.log(`Servidor corriendo en puerto : ${ server.port }`);
     setTimeout(() => {
         server.loadJournal();
-        server.loadPercentRate();
+        // server.loadPercentRate();
     }, 2000);
     
     // const arrChildren: any[] = h3.kRing( '878e62cecffffff' , 7);
