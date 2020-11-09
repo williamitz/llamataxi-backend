@@ -169,10 +169,12 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
     sql += `, '${ body.phone }' `;
     sql += `, '${ body.brithDate }' `;
     sql += `, '${ body.sex }' `;
+
+    sql += `, '${ body.codeReferal || 'xD' }' `;
+    
     sql += `, '${ body.userName }' `;
     sql += `, '${ passEncrypt }' `;
-    sql += `, 'DRIVER_ROLE'`;
-    sql += `, ${ body.google } `;
+
     sql += `, '${ body.dateLicenseExpiration }' `;
     sql += `, ${ body.isEmployee } `;
     sql += `, '${ body.numberPlate }', ${ body.year }, '${ body.color }', '${ body.dateSoatExpiration }' `;

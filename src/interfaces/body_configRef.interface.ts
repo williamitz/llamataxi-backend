@@ -1,6 +1,8 @@
 export interface IconfigRef {
-    bonnusClient: number;
-    bonnusDriver: number;
+    amountClient: number;
+    bonusCliRef: number;
+    amountDriver: number;
+    bonusDriRef: number;
     daysExpClient: number;
     daysExpDriver: number;
 }

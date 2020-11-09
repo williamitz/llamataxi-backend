@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
 import MysqlClass from "./../classes/mysqlConnect.class";
-import { verifyWebRoles, verifyWebmasterRole, verifyToken } from '../middlewares/token.mdd';
+import { verifyWebRoles, verifyWebmasterRole, verifyToken, verifyDriverClientRole } from '../middlewares/token.mdd';
 import reqIp from "request-ip";
 import { IconfigRef } from '../interfaces/body_configRef.interface';
 
@@ -36,8 +36,10 @@ ReferalRouter.post('/ConfigReferal', [verifyToken, verifyWebmasterRole], (req: a
     let pkUserToken = req.userData.pkUser || 0;
 
     let sql = `CALL rb_sp_updateConfig(`;
-    sql += `${ body.bonnusClient }, `;
-    sql += `${ body.bonnusDriver }, `;
+    sql += `${ body.amountClient }, `;
+    sql += `${ body.bonusCliRef }, `;
+    sql += `${ body.amountDriver }, `;
+    sql += `${ body.bonusDriRef }, `;
     sql += `${ body.daysExpClient }, `;
     sql += `${ body.daysExpDriver }, `;
     sql += `${ pkUserToken }, `;
@@ -59,6 +61,28 @@ ReferalRouter.post('/ConfigReferal', [verifyToken, verifyWebmasterRole], (req: a
 
     });
 
+});
+
+ReferalRouter.get('/ConfigRef/Amount', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+    
+    let sql = `CALL rb_sp_getConfReferal();`
+
+    MysqlCon.onExecuteQuery( sql, ( error: any, data: any[] ) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error,
+            });
+        }
+        
+        res.json({
+            ok: true,
+            data: data[0]
+        });
+
+    });
+    
 });
 
 export default ReferalRouter;

@@ -9,6 +9,7 @@ export interface IBodyUser {
     surname: string;
     document: string;
     dateBirth: string;
+    codeReferal: string;
     birthDate?: string;
     brithDate?: string;
     email?: string;
