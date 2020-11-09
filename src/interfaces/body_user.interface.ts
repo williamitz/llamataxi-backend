@@ -17,6 +17,7 @@ export interface IBodyUser {
     img?: string;
     role: string;
     google?: boolean;
+    prefixPhone?: string;
 
     verifyReniec?: boolean;
 

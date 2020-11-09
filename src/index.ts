@@ -29,6 +29,8 @@ server.onRun( (error: any) => {
         // server.loadPercentRate();
     }, 2000);
     
+    let codeVerify = Math.floor( Math.random() * (9999 - 1000) + 1000 );
+    console.log('code math', codeVerify);
     // const arrChildren: any[] = h3.kRing( '878e62cecffffff' , 7);
     // const plygons: any = [];
 

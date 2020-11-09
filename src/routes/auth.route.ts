@@ -4,8 +4,13 @@ import reqIp from 'request-ip';
 import jwt from 'jsonwebtoken';
 import { IBodyUser } from '../interfaces/body_user.interface';
 import MysqlClass from '../classes/mysqlConnect.class';
-import { SEED_KEY } from '../global/environments.global';
+import { SEED_KEY, TWILIO_ID, TWILIO_PHONE, TWILIO_TOKEN } from '../global/environments.global';
 import MainServer from '../classes/mainServer.class';
+import moment from 'moment';
+
+import twilio from 'twilio';
+
+const clientTwilio = twilio( TWILIO_ID , TWILIO_TOKEN);
 
 const MainSvr = MainServer.instance;
 const Mysql = MysqlClass.instance;
@@ -53,6 +58,88 @@ AuthRoutes.post('/singin/user', (req: Request, res: Response) => {
 
             // si todo se hizo correctamente notificamos al panel un nuevo tráfico
             MainSvr.io.in( 'WEB' ).emit( 'current-new-user', {pkUser: data[0].pkUser} );
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0],
+            token
+        });
+    });
+
+});
+
+AuthRoutes.post('/singin/client', (req: Request, res: Response) => {
+    let body: IBodyUser = req.body;
+
+    let passEncrypt = bcrypt.hashSync( body.userPassword, 10 );
+
+    
+    // IN `InFkTypeDocument` INT, 
+    // IN `InFkNationality` INT, 
+    // IN `InName` VARCHAR(40), 
+    // IN `InSurname` VARCHAR(40), 
+    // IN `InDocument` VARCHAR(20), 
+    // IN `InEmail` VARCHAR(60), 
+    // IN `InPhone` VARCHAR(20), 
+    // IN `InUser` VARCHAR(60), 
+    // IN `InPassword` VARCHAR(200),
+    
+    // IN `InCodeVerify` char(4),
+    // IN `InCodeVerifExp` datetime,
+    
+    
+    // IN `InIpUser` VARCHAR(20))
+
+    let codeVerify = Math.floor( Math.random() * (9999 - 1000) + 1000 );
+    let codeVerifExp = moment().add( 30, 'minutes' ).format('YYYY-MM-DD HH:mm:ss'); // 2020-05-07 19:30:12
+    
+    let sql = `CALL as_sp_addClient( `;
+    sql += `${ body.fkTypeDocument }, `;
+    sql += `${ body.fkNationality }, `;
+    sql += `'${ body.name }', `;
+    sql += `'${ body.surname }', `;
+    sql += `'${ body.document }', `;
+    sql += `'${ body.email }', `;
+    // sql += `'${ body.prefixPhone }', `;
+    sql += `'${ body.phone }', `;
+    sql += `'${ body.userName }', `;
+    sql += `'${ passEncrypt }', `;
+
+    sql += `'${ codeVerify }', `;
+    sql += `'${ codeVerifExp }', `;
+
+    sql += `'${ reqIp.getClientIp( req ) }'`;
+    sql += `);`;
+
+    Mysql.onExecuteQuery( sql, async (error: any, data: any[]) => {
+
+        if (error) { 
+            return res.status(401).json({
+                ok: false,
+                error
+            });
+        }
+        
+        let token = '';
+        if (data[0].showError === 0) {
+            token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
+
+            // si todo se hizo correctamente notificamos al panel un nuevo tráfico
+            MainSvr.io.in( 'WEB' ).emit( 'current-new-user', {pkUser: data[0].pkUser} );
+            
+            // console.log('enviando mensjae a ', `${ contact.prefixPhone } ${ contact.phone }`);
+            const twlioRes = await clientTwilio.messages
+            .create({
+                    from: TWILIO_PHONE, // de
+                    to: `${ body.prefixPhone } ${ body.phone }`, // para
+                    body: `Llamataxi Perú - ${ codeVerify }, su código de verificación expira en unos minutos`
+            });
+            
+            data[0].sendMsg = twlioRes.sid !== '' ? true : false;
+            console.log('Mensaje enviado ', twlioRes.sid);
+
         }
 
         res.json({
