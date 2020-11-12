@@ -250,7 +250,7 @@ CouponRouter.put('/Coupon/Valid/:code', [verifyToken, verifyDriverClientRole], (
 
 CouponRouter.get( '/Coupon/User', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
     
-    let status = req.query.status || 1;
+    let status = req.query.status || 'OK';
     let pkUserToken = req.userData.pkUser || 0;
 
     let statusValid = ['OK', 'USED', 'EXPIRED'];
@@ -280,6 +280,72 @@ CouponRouter.get( '/Coupon/User', [verifyToken, verifyDriverClientRole], (req: a
         res.json({
             ok: true,
             data
+        });
+
+    });
+
+});
+
+// apis para puntos y referidos
+
+CouponRouter.get('/Referal', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+    
+    let page = req.query.page || 1;
+    let status = req.query.status || 'OK';
+    let pkUserToken = req.userData.pkUser || 0;
+
+    let statusValid = ['OK', 'USED', 'EXPIRED'];
+
+    if (!statusValid.includes( status )) {
+        return res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Los roles válidos son ' + statusValid.join(', ')
+            }
+        });
+    }
+
+    let sql = `CALL rb_sp_getReferalUser(`;
+    sql += `${ page }, `;
+    sql += `'${ status }', `;
+    sql += `${ pkUserToken } ); `;
+
+    MysqlCon.onExecuteQuery( sql, ( error: any, data: any[] ) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error,
+            });
+        }
+        
+        res.json({
+            ok: true,
+            data
+        });
+
+    });
+
+});
+
+CouponRouter.get('/Referal/Total', [verifyToken, verifyDriverClientRole], (req: any, res: Response) => {
+
+    let pkUserToken = req.userData.pkUser || 0;
+
+    let sql = `CALL rb_sp_getTotalReferal( ${ pkUserToken } ); `;
+
+    MysqlCon.onExecuteQuery( sql, ( error: any, data: any[] ) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error,
+            });
+        }
+        
+        res.json({
+            ok: true,
+            total: data[0].total
         });
 
     });
