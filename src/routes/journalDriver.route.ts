@@ -1,9 +1,7 @@
 import { Request, Response, Router } from "express";
-import { IBodyJournal } from "./../interfaces/body_journal.interface";
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
-import MainServer from "../classes/mainServer.class";
 import { verifyDriverRole } from '../middlewares/token.mdd';
 import moment from 'moment';
 
@@ -42,6 +40,8 @@ JDriverRouter.post('/JournalDriver', [verifyToken, verifyDriverRole], (req: any,
     sql += `${ pkDriverToken }, `;
     sql += `${ pkUserToken }, `;
     sql += `'${ reqIp.getClientIp( req ) }' );`;
+
+    console.log(sql);
     
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
