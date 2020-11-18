@@ -151,20 +151,50 @@ export default class MainServer {
                 
                 hhEndDB = Number( arrEnd[0] ) || 0;
                 mmEndDB = Number( arrEnd[1] ) || 0;
+
+
+                if ( ( hour >= hhStartDB && (minutes >= 0 || minutes >=  mmStartDB)) ) {
+                
+                    if ( hhEndDB > 12 ) {
+                        if ( ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+                            
+                            if (this.pkJournal !== journal.pkJournal) {
+
+                                this.pkJournal = journal.pkJournal;
+                                this.nameJournal = journal.nameJournal;
+                                this.journal = journal.codeJournal;
+                                this.loadRateJournal( journal );
+                            }
+                        }
+                    } else {
+    
+                        if ( ( hour >= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+                            
+                            if (this.pkJournal !== journal.pkJournal) {
+
+                                this.pkJournal = journal.pkJournal;
+                                this.nameJournal = journal.nameJournal;
+                                this.journal = journal.codeJournal;
+                                this.loadRateJournal( journal );
+                            }
+                        }
+                    }
+                    // return journal;
+                }
                         
-                if ( ( hour >= hhStartDB && (minutes >= 0 || minutes <=  mmStartDB)) && ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+                // if ( ( hour >= hhStartDB && (minutes >= 0 || minutes >=  mmStartDB)) && ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
 
                     
-                    // console.log('jornada', journal.nameJournal);
+                //     // console.log('jornada', journal.nameJournal);
 
-                    if (this.pkJournal !== journal.pkJournal) {
+                //     if (this.pkJournal !== journal.pkJournal) {
 
-                        this.pkJournal = journal.pkJournal;
-                        this.nameJournal = journal.nameJournal;
-                        this.journal = journal.codeJournal;
-                        this.loadRateJournal( journal );
-                    }
-                }
+                //         this.pkJournal = journal.pkJournal;
+                //         this.nameJournal = journal.nameJournal;
+                //         this.journal = journal.codeJournal;
+                //         this.loadRateJournal( journal );
+                //     }
+                // }
             });
 
             console.log('Son las ', moment().format('HH:mm') , ` - jornada ${ this.pkJournal } ${ this.nameJournal }`);
@@ -184,9 +214,9 @@ export default class MainServer {
             hourStart: '',
             hourEnd: '',
         };
-
-        let hour = Number( moment().format('HH') );
-        let minutes = Number( moment().format('mm') );
+        // console.log(`hora actual ${ moment().format('HH') }:${ moment().format('mm') }`);
+        let hour = Number( moment().format('HH') );// 22
+        let minutes = Number( moment().format('mm') );// 23
         
         let hhStartDB = 0;
         let mmStartDB = 0;
@@ -194,6 +224,7 @@ export default class MainServer {
         let hhEndDB = 0;
         let mmEndDB = 0;
         this.journal_db.forEach( journal => {
+            // console.log(`jornada db `, journal);
         
             let arrStart = journal.hourStart.split(':');
             let arrEnd = journal.hourEnd.split(':');
@@ -204,10 +235,21 @@ export default class MainServer {
             hhEndDB = Number( arrEnd[0] ) || 0;
             mmEndDB = Number( arrEnd[1] ) || 0;
         
-            if ( ( hour >= hhStartDB && (minutes >= 0 || minutes <=  mmStartDB)) && ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+            if ( ( hour >= hhStartDB && (minutes >= 0 || minutes >=  mmStartDB)) ) {
+                
+                if ( hhEndDB > 12 ) {
+                    if ( ( hour <= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+                        
+                        objJournal = journal;
+                    }
+                } else {
 
-                objJournal = journal;
-                return journal;
+                    if ( ( hour >= hhEndDB && ( minutes >= 0 || minutes <=  mmEndDB)) ) {
+                        
+                        objJournal = journal;
+                    }
+                }
+                // return journal;
             }
         });
 

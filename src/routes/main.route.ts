@@ -30,6 +30,7 @@ import ReferalRouter from "./configReferal.route";
 import CouponRouter from "./coupon.route";
 import CJouRouter from "./configJournal.route";
 import JDriverRouter from "./journalDriver.route";
+import AccBankRouter from "./accountDriver.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -65,5 +66,7 @@ MainRouter.use( ReferalRouter );
 MainRouter.use( CouponRouter );
 MainRouter.use( CJouRouter );
 MainRouter.use( JDriverRouter );
+MainRouter.use( AccBankRouter );
+
 
 export default MainRouter;
