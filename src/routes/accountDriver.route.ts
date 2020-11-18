@@ -36,7 +36,7 @@ AccBankRouter.get('/Account', [verifyToken, verifyDriverRole], (req: any, res: R
     let pkDriverToken = req.userData.pkDriver || 0;
     let sql = `CALL ts_sp_getAccountDriver( ${ pkDriverToken } );`;
 
-    console.log( sql );
+    // console.log( sql );
 
     MysqlCon.onExecuteQuery( sql, ( error: any, data: any[] ) => {
 
