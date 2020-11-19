@@ -18,7 +18,7 @@ UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Res
     let module = req.params.module.toLocaleLowerCase() || '';
     let idEntity = Number( req.params.id ) || 0;
 
-    let modulesValid = ['user'];
+    let modulesValid = ['user', 'award'];
     let imgValid = ['jpg', 'png', 'jpeg'];
 
     if (!req.files || Object.keys(req.files || []).length === 0) {
@@ -63,12 +63,12 @@ UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Res
     }
     let nameFile = '';
     let pathImg = '';
-    if (module === 'user') {
+    // if (module === 'user') {
         const date = new Date().getSeconds();
         nameFile = `${ idEntity }-photo${ date }.png`;
         pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
         
-    }
+    // }
 
     file.mv(pathImg, (error: any) => {
         if (error){
@@ -80,6 +80,10 @@ UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Res
 
         if (module === 'user') {            
             updatedImgUser(idEntity, nameFile, req, res);
+        }
+
+        if (module === 'award') {            
+            updatedImgAward(idEntity, nameFile, req, res);
         }
     
     });
@@ -102,10 +106,52 @@ function updatedImgUser( pkUser: number, nameFile: string, req: Request , res: R
             });
         }
 
+        if (data[0].showError === 0) {
+            let oldImg = path.resolve(__dirname, '../upload/user/', data[0].oldImg );
+            if ( fs.existsSync( oldImg ) ) {
+                fs.unlinkSync(oldImg);
+            }
+            
+        }
+
         res.json({
             ok: true,
             data: [{ nameFile }],
             messge: 'Se subió imagen exitosamente'
+        });
+    });
+
+}
+
+function updatedImgAward( pkAward: number, nameFile: string, req: Request , res: Response ) {
+
+    let sql = `CALL aw_sp_updateImgAward(${ pkAward }, '${ nameFile }');`;
+
+    Mysql.onExecuteQuery(sql, ( error: any, data: any[] ) => {
+        if (error) {
+            let pathImg = path.resolve(__dirname, '../upload/award/', nameFile);
+            if ( fs.existsSync( pathImg ) ) {
+                fs.unlinkSync(pathImg);
+            }
+
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        if (data[0].showError === 0) {
+            let oldImg = path.resolve(__dirname, '../upload/award/', data[0].oldImg );
+            if ( fs.existsSync( oldImg ) ) {
+                fs.unlinkSync(oldImg);
+            }
+            
+        }
+
+        res.json({
+            ok: true,
+            data: [{ nameFile }],
+            messge: getErrorImg( data[0].showError )
         });
     });
 
@@ -240,6 +286,16 @@ function updateFileDriver( entity: string, idEntity: number, document: string, i
         });
     });
 
+}
+
+function getErrorImg( showError: number ) {
+    let arrErr = showError === 0 ? ['Se subió imagen exitosamente'] : ['Alerta'];
+
+    if ( showError & 1 ) {
+        arrErr.push('no se encontró premio')
+    }
+
+    return arrErr.join(', ');
 }
 
 export default UploadRoutes;

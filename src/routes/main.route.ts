@@ -32,6 +32,7 @@ import CJouRouter from "./configJournal.route";
 import JDriverRouter from "./journalDriver.route";
 import AccBankRouter from "./accountDriver.route";
 import LiquRouter from "./liquidation.route";
+import AwardRouter from "./award.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -69,6 +70,6 @@ MainRouter.use( CJouRouter );
 MainRouter.use( JDriverRouter );
 MainRouter.use( AccBankRouter );
 MainRouter.use( LiquRouter );
-
+MainRouter.use( AwardRouter );
 
 export default MainRouter;

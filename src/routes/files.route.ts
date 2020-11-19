@@ -52,4 +52,24 @@ FilesRouter.get('/Driver/Img/Get/:entity/:idEntity/:fileName', [verifyTokenUrl] 
     res.sendFile(pathImg);
 });
 
+
+FilesRouter.get('/Img/Get/:module/:fileName', [verifyTokenUrl] , (req: Request, res: Response) => {
+    
+    let module = req.params.module || 'award';
+    let nameFile = req.params.fileName || 'xD';
+    let pathImg = path.resolve( __dirname, `../upload/${ module }/`, nameFile );
+    let pathDefault = path.resolve( __dirname, '../assets/no-image.jpg/' );
+
+    let modulesValid = ['award'];
+
+    if (!fs.existsSync( pathImg )) {
+        return res.sendFile(pathDefault);
+    }
+
+    if (!modulesValid.includes( module )) {
+        return res.sendFile(pathDefault);
+    }
+    
+    res.sendFile(pathImg);
+});
 export default FilesRouter;
