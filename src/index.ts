@@ -26,8 +26,8 @@ server.onRun( (error: any) => {
     console.log(`Servidor corriendo en puerto : ${ server.port }`);
     setTimeout(() => {
         server.loadJournal();
-        // server.loadPercentRate();
-    }, 2000);
+        server.loadConfigSystem();
+    }, 4000);
     
 
     // const arrChildren: any[] = h3.kRing( '878e62cecffffff' , 7);
@@ -44,5 +44,3 @@ server.onRun( (error: any) => {
     // console.log('Vecinos de un centro dado kring', arrChildren);
     // console.log('Polygonos', plygons);
 });
-
-// console.log('clave', bcrypt.hashSync('Gamaniel1', 10));

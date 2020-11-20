@@ -133,24 +133,24 @@ TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res:
     });
 });
 
-TaxiRouter.get('/Culqui/Key', [verifyToken], (req: any, res: Response) => {
+// TaxiRouter.get('/Culqui/Key', [verifyToken], (req: any, res: Response) => {
     
-    let sql = `CALL cc_sp_getCulquiKey();`;
+//     let sql = `CALL cc_sp_getCulquiKey();`;
 
-    MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
-        if (error) {
-            return res.status(400).json({
-                ok: true,
-                error
-            });
-        }
+//     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+//         if (error) {
+//             return res.status(400).json({
+//                 ok: true,
+//                 error
+//             });
+//         }
 
-        res.json({
-            ok: true,
-            data: data[0]
-        });
-    });
-});
+//         res.json({
+//             ok: true,
+//             data: data[0]
+//         });
+//     });
+// });
 
 TaxiRouter.get('/PercentRate', [verifyToken], (req: Request, res: Response) => {
     

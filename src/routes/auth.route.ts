@@ -337,14 +337,18 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
             }); 
         }
 
+        // let dataString = JSON.stringify(data);
+        // let json = JSON.parse(dataString);
+
+        // console.log('data user', json);
         let token = '';
-        let showError = data[0].showError || 0;
-        if (showError === 0) {
+        // let showError = Number( json.showError ) || 0;
+        if (data[0].showError === 0) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
                 return res.json({
                     ok: true,
-                    showError: showError + 2,
+                    showError: data[0].showError + 2,
                 });
             }
 
@@ -359,7 +363,7 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
 
         res.json({
             ok: true,
-            showError,
+            showError: data[0].showError,
             data: data[0],
             token
         });

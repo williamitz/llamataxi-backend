@@ -8,6 +8,7 @@ import moment from 'moment' ;
 import IJournalDB from '../interfaces/journal_db.interface';
 import MysqlClass from './mysqlConnect.class';
 import { IRateJournal } from '../interfaces/rateForJournal.interface';
+import { IConfigSystem } from '../interfaces/configSystem.interface';
 // declare var moment: any;
 
 let MysqlCon = MysqlClass.instance;
@@ -27,6 +28,7 @@ export default class MainServer {
     private rateJournal_db: IRateJournal[];
     private pkJournal: number;
     private nameJournal: string;
+    public ccSystem: IConfigSystem;
 
     private percentRate: number;
     private intervalJorunal: NodeJS.Timeout;
@@ -46,6 +48,11 @@ export default class MainServer {
         this.percentRate = 0;
         this.radiusPentagon = 6;
         this.radiusPather = 4;
+        this.ccSystem = {
+            pkConfig: 0,
+            percentRate: 0,
+            culquiKey: ''
+        };
         this.intervalJorunal = setInterval(() => {}, 60000);
     }
 
@@ -127,6 +134,20 @@ export default class MainServer {
     //     });
     // }
 
+    public loadConfigSystem() {
+        MysqlCon.onExecuteQuery('CALL as_sp_getConfigSystem();', (error: any, data: any[]) => {
+            if (error) {
+                return console.log('Error en base de datos al listar config system', error);
+            }
+
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+            this.ccSystem = json[0];
+        });
+    }
+
+    
+
     private listenJournal() {
 
         console.log('iniciando interval jornada');
@@ -200,10 +221,6 @@ export default class MainServer {
             console.log('Son las ', moment().format('HH:mm') , ` - jornada ${ this.pkJournal } ${ this.nameJournal }`);
         }, 60000);
     }
-
-    // public stopIntervalJournal() {
-    //     clearInterval( this.intervalJorunal );
-    // }
     
     public getJournal(): IJournalDB {
         

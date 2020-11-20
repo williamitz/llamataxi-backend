@@ -33,6 +33,7 @@ import JDriverRouter from "./journalDriver.route";
 import AccBankRouter from "./accountDriver.route";
 import LiquRouter from "./liquidation.route";
 import AwardRouter from "./award.route";
+import culquiRouter from "./culqui.route";
 let MainRouter = Router();
 
 MainRouter.use(AuthRoutes);
@@ -71,5 +72,7 @@ MainRouter.use( JDriverRouter );
 MainRouter.use( AccBankRouter );
 MainRouter.use( LiquRouter );
 MainRouter.use( AwardRouter );
+MainRouter.use( culquiRouter );
+
 
 export default MainRouter;

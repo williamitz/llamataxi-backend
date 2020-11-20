@@ -1,108 +1,105 @@
 
 import { Request, Response, Router } from "express";
-import { verifyToken } from '../middlewares/token.mdd';
 
-import axios from 'axios';
-import { ICard, ICustomer, ICarge } from '../interfaces/body_culqui.interface';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { ICard, ICustomer, ICarge, IToken } from '../interfaces/body_culqui.interface';
 import { ICardCulqui, IClientCulqui, ItokenCulqui } from "../interfaces/response_culqui.interface";
 import reqIp from "request-ip";
 import MysqlClass from "../classes/mysqlConnect.class";
+import MainServer from "../classes/mainServer.class";
+import { verifyToken, verifyTokenUrl } from '../middlewares/token.mdd';
 
 const url_base = 'https://secure.culqi.com';
+let Server = MainServer.instance;
 
 let culquiRouter = Router();
 
 let MysqlCon = MysqlClass.instance;
 
-culquiRouter.post('/Culqui/Token', [verifyToken] ,( req: Request, res: Response) => {
+culquiRouter.post('/Culqui/Token',[] ,( req: Request, res: Response) => {
+  
+    const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
+    let body: IToken = req.body;
+
+    // tkn_test_ToqpooQTKlFYCpD4
+
+    const conf: AxiosRequestConfig = { 
+      headers: { Authorization: culquiKey } , 
+      responseType: 'json' 
+    };
     
-    let body: any = req.body;
+    axios.post( `https://secure.culqi.com/v2/tokens`, body, conf)
+      .then( (value: AxiosResponse) => {
 
-    // Make a request for a user with a given ID
-    axios.post( url_base + `/v2/tokens`, body, { headers: { Authorization: 'Bearer << llave_publica >>' } })
-      .then( (response: any) => {
 
+        // console.log('res', value);
         res.json({
             ok: true,
-            data: response
+            data:  value.data
         });
 
       })
-      .catch( (error: any) => {
-        
-        return res.status(400).json({
-            ok: false,
-            error
-        });
-        
-      });
+      .catch( e => {
+          res.status(400).json({
+              ok: true,
+              error: e
+          });
+      } );
       
 });
 
-culquiRouter.post('/Culqui/Client', [verifyToken] ,(req: any, res: Response) => {
+culquiRouter.post('/Culqui/Customer', [] ,(req: Request, res: Response) => {
 
     let body: ICustomer = req.body;
 
-    // Make a request for a user with a given ID
-    axios.post( url_base + `/v2/customers`, body, { headers: { Authorization: 'Bearer << llave_publica >>' } })
-      .then( (response: any) => {
+    const culquiKey = 'Bearer ' + Server.ccSystem.culquiKey;
+    // console.log(body);
 
+    const conf: AxiosRequestConfig = { 
+      headers: { Authorization: culquiKey } , 
+      responseType: 'json' 
+    };
+    
+    axios.post( `https://api.culqi.com/v2/customers`, body, conf)
+      .then( (value: AxiosResponse) => {
+
+
+        // console.log('res', value);
         res.json({
             ok: true,
-            data: response
+            data:  value.data
         });
 
       })
-      .catch( (error: any) => {
-        
-        return res.status(400).json({
-            ok: false,
-            error
-        });
-        
-      });
+      .catch( e => {
+          console.log('error ', e);
+          res.status(400).json({
+              ok: true,
+              error: e
+          });
+      } );
       
 });
 
-culquiRouter.post('/Culqui/Card', [verifyToken] , async (req: any, res: Response) => {
+culquiRouter.post('/Culqui/Card', [] , async (req: any, res: Response) => {
 
     let body: ICard = req.body;
+    const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
 
-    // let body: ICardBody = req.body;
-    let fkUser = req.userData.pkUser || 0;
-    let fkPerson = req.userData.pkPerson || 0;
+    let fkUser = 0;
+    let fkPerson = 0;
 
-    const headers = { headers: { Authorization: 'Bearer << llave_publica >>' } };
-
-    // Make a request for a user with a given ID
-    const resToken: ItokenCulqui = await axios.post( url_base + `/v2/tokens`, body.body_token, headers);
-    const resClient: IClientCulqui = await axios.post( url_base + `/v2/customers`, body.body_customer, headers);
-
-    const bodyCard = {
-        token_id: resToken.id,
-        customer_id: resClient.id
+    const conf: AxiosRequestConfig = { 
+      headers: { 'Authorization': culquiKey } , 
+      responseType: 'json' 
     };
 
-    // Make a request for a user with a given ID
-    axios.post( url_base + `/v2/cards`, bodyCard, headers )
-      .then( (response: any) => {
 
-        const resCulqui: ICardCulqui = response;
-        
-        /**
-         *  IN `InFkPerson` int,
-            IN `InIdCard` varchar(100),
-            IN `InIdClient` varchar(100),
-            IN `InCardNumber` varchar(16),
-            IN `InLastFour` char(4),
-            IN `InBank` varchar(100),
-            IN `InCardBrand` varchar(30),
-            IN `InCardType` varchar(30),
-            IN `InCountryBank` varchar(100),
-            IN `InCountryCodeBank` varchar(3),
-            IN `InFkUser` int,
-            IN `InIpUser`
-        */
+    // Make a request for a user with a given ID
+    axios.post( 'https://api.culqi.com/v2/cards', body, conf )
+      .then( (value: AxiosResponse) => {
+
+        const resCulqui: ICardCulqui = value.data;
         
         let sql = `CALL ts_sp_addCard(`
         sql += `${ fkPerson }, `;
@@ -126,6 +123,8 @@ culquiRouter.post('/Culqui/Card', [verifyToken] , async (req: any, res: Response
                     error
                 });
             }
+
+            data[0].dataCulqui = value.data;
             
             res.json({
                 ok: true,
@@ -135,17 +134,12 @@ culquiRouter.post('/Culqui/Card', [verifyToken] , async (req: any, res: Response
             
         });
 
-        res.json({
-            ok: true,
-            data: response
-        });
-
       })
-      .catch( (error: any) => {
-        
+      .catch( e => {
+        console.log('error card', e);
         return res.status(400).json({
             ok: false,
-            error
+            error: e.response.data
         });
         
       });
@@ -155,9 +149,9 @@ culquiRouter.post('/Culqui/Card', [verifyToken] , async (req: any, res: Response
 culquiRouter.delete('/Culqui/Card/:id', [verifyToken] ,(req: Request, res: Response) => {
 
     let idCard = req.params.id || 'xD';
-
+    const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
     // Make a request for a user with a given ID
-    axios.delete( url_base + `/v2/cards/${ idCard }`, { headers: { Authorization: 'Bearer << llave_publica >>' } })
+    axios.delete( url_base + `/v2/cards/${ idCard }`, { headers: { Authorization: culquiKey } })
       .then( (response: any) => {
 
         res.json({
@@ -185,9 +179,9 @@ culquiRouter.delete('/Culqui/Card/:id', [verifyToken] ,(req: Request, res: Respo
 culquiRouter.post('/Culqui/charge', [verifyToken] ,(req: Request, res: Response) => {
 
     let body: ICarge = req.body;
-
+    const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
     // Make a request for a user with a given ID
-    axios.post( url_base + `/v2/charges`, body ,{ headers: { Authorization: 'Bearer << llave_publica >>' } })
+    axios.post( url_base + `/v2/charges`, body ,{ headers: { Authorization: culquiKey } })
       .then( (response: any) => {
 
         res.json({

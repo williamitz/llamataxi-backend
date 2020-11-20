@@ -15,18 +15,18 @@ export interface ICustomer {
     address: string;
     address_city: string;
     country_code: string;
-    phone_number: string;
+    phone_number: number;
 }
 
 export interface ICard {
-    // customer_id: string;
-    // token_id: string;
-
+    customer_id: string;
+    token_id: string;
+    validate: boolean;
     // token
-    body_token: IToken;
+    // body_token: IToken;
 
     // customer 
-    body_customer: ICustomer;
+    // body_customer: ICustomer;
 }
 
 	
