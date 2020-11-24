@@ -4,7 +4,7 @@ export interface IToken {
     expiration_month: string;
     expiration_year: string;
     email: string;
-    cardAll: string;
+    // cardAll: string;
     expiration: string;
 }
 

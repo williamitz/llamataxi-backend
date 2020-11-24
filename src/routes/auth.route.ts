@@ -337,18 +337,18 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
             }); 
         }
 
-        // let dataString = JSON.stringify(data);
-        // let json = JSON.parse(dataString);
+        let dataString = JSON.stringify(data);
+        let json = JSON.parse(dataString);
 
         // console.log('data user', json);
         let token = '';
-        // let showError = Number( json.showError ) || 0;
-        if (data[0].showError === 0) {
+        let showError = Number( json.showError ) || 0;
+        if (showError === 0) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
                 return res.json({
                     ok: true,
-                    showError: data[0].showError + 2,
+                    showError: showError + 2,
                 });
             }
 
@@ -356,14 +356,14 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
             MainSvr.io.in( 'WEB' ).emit( 'current-new-traffic', {pkUser: data[0].pkUser} );
 
             delete data[0].userPassword;
-            delete data[0].showError;
+            // delete data[0].showError;
 
             token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
         }
 
         res.json({
             ok: true,
-            showError: data[0].showError,
+            showError,
             data: data[0],
             token
         });
