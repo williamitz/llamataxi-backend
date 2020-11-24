@@ -107,7 +107,7 @@ function updatedImgUser( pkUser: number, nameFile: string, req: Request , res: R
         }
 
         if (data[0].showError === 0) {
-            let oldImg = path.resolve(__dirname, '../upload/user/', data[0].oldImg );
+            let oldImg = path.resolve(__dirname, '../upload/user/', data[0].oldImg || 'xD.png' );
             if ( fs.existsSync( oldImg ) ) {
                 fs.unlinkSync(oldImg);
             }

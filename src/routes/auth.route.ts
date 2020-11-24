@@ -562,7 +562,6 @@ AuthRoutes.post('/auth/token', (req: Request, res: Response) => {
     });
 });
 
-
 function sendCodeVeryf( prefix: string, phone: string, code: number ): Promise<IResponse> {
 
     return new Promise( (resolve) => {
@@ -575,7 +574,7 @@ function sendCodeVeryf( prefix: string, phone: string, code: number ): Promise<I
         }, (error: any, res) => {
 
             if (error) {
-                // console.log('Error al enviar mensaje twilio', error);
+                console.log('Error al enviar mensaje twilio', error);
                 return resolve({ ok: false, error });
             }
         

@@ -18,9 +18,9 @@ export const OS_KEY = process.env.OS_KEY || 'Basic MGMwMzViY2YtMmJmYi00ZmZmLWJhZ
 
 // twilio config
 
-export const TWILIO_ID = process.env.TWILIO_ID || 'ACcdea36ead5a0eb1838ff210943a8816a';
-export const TWILIO_TOKEN = process.env.TWILIO_TOKEN || 'cd5e8f1996087d4fd8b9754d26adf40c';
-export const TWILIO_PHONE = process.env.TWILIO_PHONE || '+18174407150';
+export const TWILIO_ID = process.env.TWILIO_ID || 'ACdbaa7065fb9435b6741165f1dedc70b7';
+export const TWILIO_TOKEN = process.env.TWILIO_TOKEN || '84237f8feb58c70a036744ae6d94c9a8';
+export const TWILIO_PHONE = process.env.TWILIO_PHONE || '+12058094417';
 
 /*
 Si pierde su teléfono o no tiene acceso a su dispositivo de verificación, 

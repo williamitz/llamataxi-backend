@@ -2,7 +2,7 @@
 import { Request, Response, Router } from "express";
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ICard, ICustomer, ICarge, IToken } from '../interfaces/body_culqui.interface';
+import { ICard, ICustomer, ICarge, IToken, IRefund } from '../interfaces/body_culqui.interface';
 import { ICardCulqui, IClientCulqui, ItokenCulqui } from "../interfaces/response_culqui.interface";
 import reqIp from "request-ip";
 import MysqlClass from "../classes/mysqlConnect.class";
@@ -40,8 +40,8 @@ culquiRouter.post('/Culqui/Token',[] ,( req: Request, res: Response) => {
 
       })
       .catch( e => {
-          res.status(400).json({
-              ok: true,
+          res.json({
+              ok: false,
               error: e
           });
       } );
@@ -176,29 +176,64 @@ culquiRouter.delete('/Culqui/Card/:id', [verifyToken] ,(req: Request, res: Respo
 // Si utilizas tu llave secreta de integración no se realizarán cargos reales, 
 // a diferencia del entorno de producción donde enviamos tu petición a los bancos y marcas procesadoras.
 
-culquiRouter.post('/Culqui/charge', [verifyToken] ,(req: Request, res: Response) => {
+culquiRouter.post('/Culqui/Charge', [] ,(req: Request, res: Response) => {
 
     let body: ICarge = req.body;
     const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
+
+    const conf: AxiosRequestConfig = { 
+      headers: { Authorization: culquiKey } , 
+      responseType: 'json' 
+    };
     // Make a request for a user with a given ID
-    axios.post( url_base + `/v2/charges`, body ,{ headers: { Authorization: culquiKey } })
-      .then( (response: any) => {
+    axios.post( 'https://api.culqi.com/v2/charges', body , conf)
+      .then( (value: AxiosResponse) => {
 
         res.json({
             ok: true,
-            data: response
+            data: value.data
         });
 
       })
-      .catch( (error: any) => {
-        
-        return res.status(400).json({
+      .catch( e => {
+        console.log('error culqui', e);
+        return res.json({
             ok: false,
-            error
+            error: e.response.data
         });
         
       });
       
+});
+
+culquiRouter.post('/Culqui/Refund', [] ,(req: Request, res: Response) => {
+
+  let body: IRefund = req.body;
+  const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
+
+  const conf: AxiosRequestConfig = { 
+    headers: { Authorization: culquiKey } , 
+    responseType: 'json' 
+  };
+  // Make a request for a user with a given ID
+  axios.post( 'https://api.culqi.com/v2/refunds', body , conf)
+    .then( (value: AxiosResponse) => {
+
+      res.json({
+          ok: true,
+          data: value.data
+      });
+
+    })
+    .catch( e => {
+      console.log('error culqui', e);
+      return res.json({
+          ok: false,
+          error: e.response.data
+      });
+      
+    });
+    
 });
 
 export default culquiRouter;

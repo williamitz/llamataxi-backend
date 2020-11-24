@@ -39,3 +39,10 @@ export interface ICarge {
     email: string;
     source_id: string;
 }
+
+
+export interface IRefund {
+  amount: number;
+  charge_id: string;
+  reason: string;
+}
