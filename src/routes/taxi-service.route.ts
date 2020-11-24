@@ -106,6 +106,11 @@ TaxiRouter.post('/Service/Add', [verifyToken, verifyClientRole], (req: any, res:
     sql += `'${ body.paymentType }', `;
     sql += `'${ indexHex }', `;
 
+    // pago con tarjeta
+    sql += `'${ body.cardTkn }', `;
+    sql += `'${ body.chargeCulqui }', `;
+    sql += `'${ body.cardCulqui }', `;
+
     // descuentos
     sql += `${ body.fkCouponUser }, `;
     sql += `${ body.discount }, `;

@@ -38,6 +38,10 @@ export interface IBodyService {
     changeRate: boolean;
     pkOfferService: number;
 
+    cardTkn: string;
+    cardCulqui: string;
+    chargeCulqui: string;
+
     // descuentos
     fkCouponUser: number;
     discount: number;

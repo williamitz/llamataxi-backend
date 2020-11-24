@@ -29,7 +29,7 @@ export interface ICard {
     // body_customer: ICustomer;
 }
 
-	
+
 // Monto del cargo. Sin punto decimal.
 // Ejemplo: 100.00 serían 10000
 
