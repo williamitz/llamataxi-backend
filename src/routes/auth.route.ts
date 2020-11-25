@@ -340,9 +340,9 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
         let dataString = JSON.stringify(data);
         let json = JSON.parse(dataString);
 
-        // console.log('data user', json);
+        console.log('data user', json);
         let token = '';
-        let showError = Number( json.showError ) || 0;
+        let showError = Number( json[0].showError ) || 0;
         if (showError === 0) {
 
             if (!bcrypt.compareSync( body.userPassword, data[0].userPassword )) {
@@ -359,6 +359,10 @@ AuthRoutes.post('/Login/Client', (req: Request, res: Response) => {
             // delete data[0].showError;
 
             token = jwt.sign( { dataUser: data[0] }, SEED_KEY, { expiresIn: '30d' } );
+        }
+
+        if ( showError & 4 ) {
+            delete data[0].userPassword;
         }
 
         res.json({
