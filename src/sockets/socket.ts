@@ -65,7 +65,8 @@ export const singUser = ( client: Socket, io: SocketIO.Server ) => {
                                         osID,
                                         payload.pkCategory || 0,
                                         payload.codeCategory || '',
-                                        payload.occupied || false
+                                        payload.occupied || false,
+                                        payload.playGeo || false
                                         );
         if (!ok) {            
             return callback({
@@ -798,12 +799,11 @@ export const changeOccupiedDriver = ( client: Socket ) => {
 export const currentPositionService = ( client: Socket, io: SocketIO.Server, radiusPentagon: number ) => {
     client.on('current-position-driver-service', ( payload: IWatchGeo, callback: Function ) => {
         const clientSocket = listUser.onFindUserForPk( payload.pkClient );
-
-        if (clientSocket.pkUser === 0) {
-            return callback({
-                ok: false,
-                message: 'No se encontró cliente conectado'
-            });
+        // console.log('nuevo emit geo service', payload);
+        // console.log('buscando a nemo', clientSocket);
+        if (clientSocket.pkUser != 0) {
+            // emitiendo coords a cliente del servicio
+            io.in( clientSocket.id ).emit('current-position-driver', payload);
         }
 
         const driverIO = listUser.onFindUser( client.id );
@@ -869,11 +869,11 @@ export const currentPositionService = ( client: Socket, io: SocketIO.Server, rad
 
         io.in('WEB').emit('current-position-driver', payloadPosition);
 
-        if (payload.pkService && payload.pkService !== 0) {                
+        if (payload.pkService && payload.pkService !== 0) { 
+            console.log('emitiendo a gente que monitorea');               
             io.in(`MONITOR-${ payload.pkService }`).emit('current-position-driver', payloadMonitor);
         }
-        // emitiendo coords a cliente del servicio
-        io.in( clientSocket.id ).emit('current-position-driver', payload);
+        
 
         onUpdateCoords( driverIO.pkUser, payload.lat, payload.lng, roomIndex ).then( (resSql) => {
             

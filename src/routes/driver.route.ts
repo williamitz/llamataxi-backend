@@ -283,4 +283,24 @@ DriverRoutes.get('/Monitor/GetZones', [verifyToken, verifyWebRoles], (req: any, 
 
 });
 
+DriverRoutes.post('/Monitor/Refresh', [verifyToken, verifyWebRoles], (req: any, res: Response) => {
+    
+    let sql = 'CALL as_sp_refreshMonitor();'
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            // data
+        });
+    });
+
+});
+
 export default DriverRoutes;

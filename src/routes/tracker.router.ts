@@ -16,8 +16,9 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
     let fkUser = req.userData.pkUser || 0;
 
     console.log('Recibiendo tracker post', body);
-
+    
     const user = listUser.onFindUserForPk( fkUser );
+    console.log('Buscando a nemos', user);
     const codeCategory = user.category;
     const indexHex = user.onUpdateCoords( body.lat, body.lng, mainServer.radiusPentagon );
 
@@ -37,13 +38,10 @@ TrackerRouter.post('/Tracker/Geo',[verifyToken], (req: any, res: Response) => {
         lng: body.lng
     };
 
-    if (user.pkUser !== 0 && user.playGeo ) {
-        mainServer.io.in('WEB').emit('current-position-driver', payloadPosition);
-        
-        if (body.pkService && body.pkService !== 0) {                
-            mainServer.io.in(`MONITOR-${ body.pkService }`).emit('current-position-driver', payloadMonitor);
-        }
-
+    mainServer.io.in('WEB').emit('current-position-driver', payloadPosition);
+    
+    if (body.pkService !== 0) {                
+        mainServer.io.in(`MONITOR-${ body.pkService }`).emit('current-position-driver', payloadMonitor);
     }
     
     if (user.pkUser !== 0 && !user.occupied) {

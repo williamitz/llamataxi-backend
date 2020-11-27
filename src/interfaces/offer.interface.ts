@@ -34,4 +34,5 @@ export interface IOffer {
     nameModel: string;
     changeRate: number;
     osId: string;
+    monitorToken?: string;
 }

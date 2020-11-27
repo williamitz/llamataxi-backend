@@ -55,7 +55,7 @@ export class ListUserSockets {
         return finded;
     }
 
-    onSingUser( id: string, pkUser: number, userName: string, nameComplete: string, role: string, device: string, osID = '', pkCategory = 0, codeCategory = 'no especificado', occupied = false ): boolean {
+    onSingUser( id: string, pkUser: number, userName: string, nameComplete: string, role: string, device: string, osID = '', pkCategory = 0, codeCategory = 'no especificado', occupied = false, playGeo = false ): boolean {
 
         const finded = this.listUser.find( user => user.id === id  );
         if (!finded) {
@@ -86,6 +86,7 @@ export class ListUserSockets {
         finded.pkCategory = pkCategory;
         finded.category = codeCategory;
         finded.occupied = occupied;
+        finded.playGeo = playGeo;
         return true;
     }
 
@@ -220,6 +221,10 @@ export class ListUserSockets {
         const findeed = this.listUser.filter( uss => uss.pkUser === pk && uss.role === 'DRIVER_ROLE');
         findeed.forEach( item => {
             item.occupied = occupied;
+
+            if (occupied) {
+                item.playGeo = true;
+            }
         });
 
         return true;

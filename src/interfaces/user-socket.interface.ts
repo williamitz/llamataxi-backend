@@ -10,6 +10,7 @@ export interface IUserSocket {
     pkCategory?: number;
     codeCategory?: string;
     occupied?: boolean;
+    playGeo?: boolean;
   }
 
   export interface IUserCoords {

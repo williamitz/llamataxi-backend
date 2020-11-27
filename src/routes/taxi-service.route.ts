@@ -397,7 +397,8 @@ TaxiRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (req:
             const payload = { 
                 pkService: body.pkService,
                 msg, 
-                indexHex: body.indexHex 
+                indexHex: body.indexHex,
+                fkUserDriver: body.fkDriver
             };
 
             indexChildren.forEach( indexHex => {
@@ -410,6 +411,9 @@ TaxiRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (req:
                  pkClient: fkUser
             };
             Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb );
+
+            let token = jwt.sign( { dataMonitor: { pkService: body.pkService } }, SEED_KEY, { expiresIn: '5m' } );
+            data[0].monitorToken = token;
 
         }
 
@@ -438,8 +442,8 @@ TaxiRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (req:
         }
 
         // creación de token para seguimiento en tiempo real
-        let token = jwt.sign( { dataMonitor: { pkService } }, SEED_KEY, { expiresIn: '3h' } );
-        data[0].monitorToken = token;
+        // let token = jwt.sign( { dataMonitor: { pkService } }, SEED_KEY, { expiresIn: '1h' } );
+        // data[0].monitorToken = token;
 
         res.json({
             ok: true,
@@ -451,10 +455,10 @@ TaxiRouter.put('/Service/Info/:pk', [verifyToken, verifyDriverClientRole], (req:
 
 TaxiRouter.get('/Service/Info/Monitor', [verifyTokenMonitor], (req: any, res: Response) => {
 
-    let pkService = req.dataMonitor.pkService || 0;
+    let pkService = Number( req.dataMonitor.pkService ) || 0;
 
     let sql = `CALL ts_sp_getInfoMonitor( ${ pkService } );`;
-
+    // console.log('por que no se imprime esta línea pkService', sql);
     MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
         if (error) {
