@@ -2,7 +2,7 @@
 import { Request, Response, Router } from "express";
 
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import { ICard, ICustomer, ICarge, IToken, IRefund } from '../interfaces/body_culqui.interface';
+import { ICard, ICustomer, ICarge, IToken, IRefund, IChargeJournal } from '../interfaces/body_culqui.interface';
 import { ICardCulqui, IClientCulqui, ItokenCulqui } from "../interfaces/response_culqui.interface";
 import reqIp from "request-ip";
 import MysqlClass from "../classes/mysqlConnect.class";
@@ -223,6 +223,51 @@ culquiRouter.post('/Culqui/Refund', [] ,(req: Request, res: Response) => {
           ok: true,
           data: value.data
       });
+
+    })
+    .catch( e => {
+      console.log('error culqui', e);
+      return res.json({
+          ok: false,
+          error: e.response.data
+      });
+      
+    });
+    
+});
+
+culquiRouter.post('/Culqui/Charge/Journal', [] ,(req: Request, res: Response) => {
+
+  let body: IChargeJournal = req.body;
+  const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
+
+  const conf: AxiosRequestConfig = { 
+    headers: { Authorization: culquiKey } , 
+    responseType: 'json' 
+  };
+  // Make a request for a user with a given ID
+  axios.post( 'https://api.culqi.com/v2/charges', body , conf)
+    .then( (value: AxiosResponse) => {
+      
+      let sql = `CALL ts_sp_updateChargeJournal( ${ body.pkJournal }, '${ value.data.id }' );`;
+      MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) {
+          console.log('error al actualizar cargo jornada');
+          return res.json({
+            ok: false,
+            error,
+          });
+        }
+
+        res.json({
+            ok: true,
+            data: value.data,
+            dataJournal: data[0]
+        });
+
+      });
+
 
     })
     .catch( e => {

@@ -4,6 +4,7 @@ import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
 import { verifyDriverRole } from '../middlewares/token.mdd';
 import moment from 'moment';
+import IBodyJournal from "../interfaces/body_journalDriver.interface";
 
 let JDriverRouter = Router();
 let MysqlCon = MysqlClass.instance;
@@ -31,13 +32,17 @@ JDriverRouter.get('/ConfigJournal', [verifyToken, verifyDriverRole], (req: any, 
 });
 
 JDriverRouter.post('/JournalDriver', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
-    let body = req.body;
+    let body: IBodyJournal = req.body;
     let pkUserToken = req.userData.pkUser || 0;
     let pkDriverToken = req.userData.pkDriver || 0;
         
     let sql = `CALL ts_sp_addJournalDriver( `;
-    sql += `${ body.fkConfigJournal || 0 }, `;
+    sql += `${ body.fkConfJournal || 0 }, `;
     sql += `${ pkDriverToken }, `;
+    
+    sql += `'${ body.cardCulqui }', `;
+    sql += `${ body.chargeAmount }, `;
+
     sql += `${ pkUserToken }, `;
     sql += `'${ reqIp.getClientIp( req ) }' );`;
 

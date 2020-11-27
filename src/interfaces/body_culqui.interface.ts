@@ -40,6 +40,14 @@ export interface ICarge {
     source_id: string;
 }
 
+export interface IChargeJournal {
+    amount: number;
+    currency_code: string;
+    email: string;
+    source_id: string;
+    pkJournal?: number;
+}
+
 
 export interface IRefund {
   amount: number;
