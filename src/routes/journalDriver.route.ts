@@ -67,12 +67,17 @@ JDriverRouter.post('/JournalDriver', [verifyToken, verifyDriverRole], (req: any,
 });
 
 JDriverRouter.get('/JournalDriver', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+    
     let status = req.query.status || true;
     let pkDriverToken = req.userData.pkDriver || 0;
+    let pkUserToken = req.userData.pkUser || 0;
         
     let sql = `CALL ts_sp_getListJournalDriver( `;
     sql += `${ status }, `;
-    sql += `${ pkDriverToken } );`;
+    sql += `${ pkDriverToken }, `;
+    sql += `${ pkUserToken } );`;
+
+    console.log('sql journal driver', sql);
     
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 

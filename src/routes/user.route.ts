@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { SEED_KEY } from '../global/environments.global';
 import { IProfile } from '../interfaces/body_profile.interface';
+import { IProfileWeb } from '../interfaces/body_profileWeb.interface';
 
 let UserRouter = Router();
 let MysqlCnn = MysqlClass.instance;
@@ -495,12 +496,6 @@ UserRouter.put('/User/ChangePass/Web', [verifyToken, verifyWebRoles], (req: any,
     let pkUserToken = req.userData.pkUser || 0;
     let body: IPasswordWeb = req.body;
 
-    /*
-        IN `InPkUser` int,
-        IN `InPassword` varchar(200),
-        IN `InFkUser` int,
-        IN `InIpUser` varchar(20) */
-
     let sqlChange = `CALL as_sp_updatePassUser(`;
     sqlChange += `${ body.pkUser }, `;
     sqlChange += `'${ bcrypt.hashSync( body.password, 10 ) }', `;
@@ -527,6 +522,76 @@ UserRouter.put('/User/ChangePass/Web', [verifyToken, verifyWebRoles], (req: any,
 
 });
 
-//cu_sp_updateProfileClient
+UserRouter.get('/Profile/Web', [verifyToken, verifyWebRoles], (req: any, res: Response) => {
+
+    let pkUserToken = req.userData.pkUser || 0;
+
+    let sqlChange = `CALL as_sp_getProfileWeb( ${ pkUserToken } );`;
+
+    MysqlCnn.onExecuteQuery( sqlChange, (error: any, data: any[]) => {
+
+        if (error) { 
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    });
+});
+
+UserRouter.put('/Profile/Web', [verifyToken, verifyWebRoles], (req: any, res: Response) => {
+
+    let pkUserToken = req.userData.pkUser || 0;
+    let pkPersonToken = req.userData.pkPerson || 0;
+    let body: IProfileWeb = req.body;
+
+    /**
+     * IN `InName` varchar(40),
+        IN `InSurname` varchar(40),
+        IN `InFkDocument` tinyint,
+        IN `InFkNationality` int,
+        IN `InDocument` varchar(20),
+        IN `InPhone` varchar(20),
+        IN `InEmail` varchar(100),
+        IN `InIpUser` varchar(20)
+     */
+
+    let sql = `CALL as_sp_updateProfileWeb( `;
+    sql += `${ pkUserToken },`;
+    sql += `${ pkPersonToken },`;
+    sql += `'${ body.name }',`;
+    sql += `'${ body.surname }',`;
+    sql += `${ body.fkTypeDocument },`;
+    sql += `${ body.fkNationality },`;
+    sql += `'${ body.document }',`;
+    sql += `'${ body.phone }',`;
+    sql += `'${ body.email }',`;
+    sql += `'${ reqIp.getClientIp( req ) }'`;
+    sql += `); `;
+
+    MysqlCnn.onExecuteQuery( sql, (error: any, data: any[]) => {
+
+        if (error) { 
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data: data[0]
+        });
+
+    });
+});
 
 export default UserRouter;
