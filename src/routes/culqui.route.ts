@@ -249,7 +249,12 @@ culquiRouter.post('/Culqui/Charge/Journal', [] ,(req: Request, res: Response) =>
   axios.post( 'https://api.culqi.com/v2/charges', body , conf)
     .then( (value: AxiosResponse) => {
       
-      let sql = `CALL ts_sp_updateChargeJournal( ${ body.pkJournal }, '${ value.data.id }' );`;
+      let sql = `CALL ts_sp_updateChargeJournal( `;
+      sql += `${ body.pkJournal }, `
+      sql += `'${ value.data.id }', `
+      sql += `'${ body.cardCulqui }', `
+      sql += `${ body.amount }`
+      sql += `);`;
       MysqlCon.onExecuteQuery( sql, (error: any, data: any[]) => {
 
         if (error) {

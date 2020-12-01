@@ -106,10 +106,11 @@ JDriverRouter.get('/JournalDriver', [verifyToken, verifyDriverRole], (req: any, 
 });
 
 JDriverRouter.put('/JournalDriver/:pk', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
+
     let pkJournal = req.params.pk || 0;
     let pkUserToken = req.userData.pkUser || 0;
     let pkDriverToken = req.userData.pkDriver || 0;
-        
+
     let sql = `CALL ts_sp_closeJournal( `;
     sql += `${ pkJournal }, `;
     sql += `${ pkDriverToken }, `;
@@ -124,7 +125,7 @@ JDriverRouter.put('/JournalDriver/:pk', [verifyToken, verifyDriverRole], (req: a
                 error
             });
         }
-    
+
         res.json({
             ok: true,
             showError: data[0].showError,

@@ -45,7 +45,9 @@ export interface IChargeJournal {
     currency_code: string;
     email: string;
     source_id: string;
+
     pkJournal?: number;
+    cardCulqui?: string;
 }
 
 
