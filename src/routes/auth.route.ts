@@ -91,6 +91,7 @@ AuthRoutes.post('/singin/client', [], (req: Request, res: Response) => {
     sql += `'${ body.phone }', `;
     sql += `'${ body.userName }', `;
     sql += `'${ passEncrypt }', `;
+    sql += `${ body.conditions }, `;
 
     sql += `'${ codeVerify }', `;
     sql += `'${ codeVerifExp }', `;
@@ -287,6 +288,7 @@ AuthRoutes.post('/singin/driver', (req: Request, res: Response) => {
     
     sql += `, '${ body.userName }' `;
     sql += `, '${ passEncrypt }' `;
+    sql += `, ${ body.conditions } `;
 
     sql += `, '${ body.dateLicenseExpiration }' `;
     sql += `, ${ body.isEmployee } `;

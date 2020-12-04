@@ -25,6 +25,7 @@ export interface IBodyUser {
     userName?: string;
     userPassword?: string;
     userPassRepit?: string;
+    conditions?: boolean;
 
     // registro de conductor
 
