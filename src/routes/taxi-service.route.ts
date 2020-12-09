@@ -412,7 +412,7 @@ TaxiRouter.post('/Offer/Accepted/Client', [verifyToken, verifyClientRole], (req:
             };
             Server.io.in( 'WEB' ).emit( 'disposal-service', payloadWeb );
 
-            let token = jwt.sign( { dataMonitor: { pkService: body.pkService } }, SEED_KEY, { expiresIn: '5m' } );
+            let token = jwt.sign( { dataMonitor: { pkService: body.pkService } }, SEED_KEY, { expiresIn: '1h' } );
             data[0].monitorToken = token;
 
         }

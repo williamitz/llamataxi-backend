@@ -4,6 +4,7 @@ import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
 import { verifyWebRoles } from '../middlewares/token.mdd';
 import moment from 'moment';
+import IBodyLiqu from "../interfaces/body_liquidation.interface";
 
 let LiquRouter = Router();
 let MysqlCon = MysqlClass.instance;
@@ -131,6 +132,54 @@ LiquRouter.get('/Services/Journal', [verifyToken, verifyWebRoles], (req: any, re
 
     });
     
+});
+
+LiquRouter.post('/Liquidation', [verifyToken], (req: any, res: Response) => {
+    
+    let body: IBodyLiqu = req.body;
+    let pkUserToken = req.userData.pkUser || 0;
+    
+    /**
+     * IN `InFkJournalDriver` bigint,
+        IN `InFkDriver` int,
+        IN `InOperation` varchar(15),
+        IN `InObservation` varchar(100),
+        IN `InAmount` float(5,2),
+        IN `InAmountCompany` float(5,2),
+        IN `InHaveDebt` tinyint,
+        IN `InFkAccount` int,
+        IN `InFkUser` int,
+        IN `InIpUser` varchar(20))
+     */
+
+    let sql = `CALL ts_sp_addLiquidation(`;
+    sql += `${ body.fkJournalDriver }, `;
+    sql += `${ body.fkDriver }, `;
+    sql += `'${ body.operation }', `;
+    sql += `'${ body.observation }', `;
+    sql += `${ body.totalLiquidation }, `;
+    sql += `${ body.amountCompany }, `;
+    sql += `${ body.paidOut }, `;
+    sql += `${ body.fkAccount }, `;
+    sql += `${ pkUserToken }, `;
+    sql += `'${ reqIp.getClientIp( req ) }' );`;
+
+    MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+    
+        res.json({
+            ok: true,
+            showError: data[0].showError,
+            data
+        });
+    });
+
 });
 
 

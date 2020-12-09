@@ -5,9 +5,11 @@ import reqIp from "request-ip";
 import { verifyDriverRole } from '../middlewares/token.mdd';
 import moment from 'moment';
 import IBodyJournal from "../interfaces/body_journalDriver.interface";
+import MainServer from "../classes/mainServer.class";
 
 let JDriverRouter = Router();
 let MysqlCon = MysqlClass.instance;
+let Server = MainServer.instance;
 
 JDriverRouter.get('/ConfigJournal', [verifyToken, verifyDriverRole], (req: any, res: Response) => {
     // let pkUserToken = req.userData.pkUser || 0;
@@ -110,6 +112,7 @@ JDriverRouter.put('/JournalDriver/:pk', [verifyToken, verifyDriverRole], (req: a
     let pkJournal = req.params.pk || 0;
     let pkUserToken = req.userData.pkUser || 0;
     let pkDriverToken = req.userData.pkDriver || 0;
+    let nameDriver = req.userData.nameComplete || '';
 
     let sql = `CALL ts_sp_closeJournal( `;
     sql += `${ pkJournal }, `;
@@ -124,6 +127,10 @@ JDriverRouter.put('/JournalDriver/:pk', [verifyToken, verifyDriverRole], (req: a
                 ok: false,
                 error
             });
+        }
+
+        if (data[0].showError === 0) {
+            Server.io.in('WEB').emit('close-journal', { nameDriver, pkJournal });
         }
 
         res.json({
