@@ -18,7 +18,7 @@ let MysqlCon = MysqlClass.instance;
 
 culquiRouter.post('/Culqui/Token',[] ,( req: Request, res: Response) => {
   
-    const culquiKey = `Bearer ${ Server.ccSystem.culquiKey }`;
+    const culquiKey = `Bearer ${ Server.ccSystem.culquiKeyPublic }`;
     let body: IToken = req.body;
 
     // tkn_test_ToqpooQTKlFYCpD4
@@ -27,6 +27,8 @@ culquiRouter.post('/Culqui/Token',[] ,( req: Request, res: Response) => {
       headers: { Authorization: culquiKey } , 
       responseType: 'json' 
     };
+
+    // console.log('header culqui', conf);
     
     axios.post( `https://secure.culqi.com/v2/tokens`, body, conf)
       .then( (value: AxiosResponse) => {
@@ -40,6 +42,8 @@ culquiRouter.post('/Culqui/Token',[] ,( req: Request, res: Response) => {
 
       })
       .catch( e => {
+
+        console.log('error culqui', e);
           res.json({
               ok: false,
               error: e
@@ -72,7 +76,7 @@ culquiRouter.post('/Culqui/Customer', [] ,(req: Request, res: Response) => {
 
       })
       .catch( e => {
-          console.log('error ', e);
+          // console.log('error ', e);
           res.status(400).json({
               ok: true,
               error: e

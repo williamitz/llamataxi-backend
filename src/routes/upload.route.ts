@@ -18,7 +18,7 @@ UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Res
     let module = req.params.module.toLocaleLowerCase() || '';
     let idEntity = Number( req.params.id ) || 0;
 
-    let modulesValid = ['user', 'award'];
+    let modulesValid = ['user', 'award', 'voucher'];
     let imgValid = ['jpg', 'png', 'jpeg'];
 
     if (!req.files || Object.keys(req.files || []).length === 0) {
@@ -61,14 +61,18 @@ UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Res
             }
         });
     }
-    let nameFile = '';
-    let pathImg = '';
-    // if (module === 'user') {
-        const date = new Date().getSeconds();
+    const date = new Date().getSeconds();
+    let nameFile = `${ idEntity }-photo${ date }.png`;
+
+    if ( module === 'user' ) {
         nameFile = `${ idEntity }-photo${ date }.png`;
-        pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
-        
-    // }
+    }else if( module === 'award' ) {
+        nameFile = `${ idEntity }-award${ date }.png`;
+    }else if( module === 'voucher' ) {
+        nameFile = `${ idEntity }-liquidation${ date }.png`;
+    }
+
+    let pathImg = path.resolve(__dirname, `../upload/${ module }/${ nameFile }`);
 
     file.mv(pathImg, (error: any) => {
         if (error){
@@ -84,6 +88,10 @@ UploadRoutes.put('/upload/:module/:id/', [verifyToken] , (req: Request, res: Res
 
         if (module === 'award') {            
             updatedImgAward(idEntity, nameFile, req, res);
+        }
+
+        if (module === 'voucher') {            
+            updatedVoucherLiqu(idEntity, nameFile, req, res);
         }
     
     });
@@ -156,6 +164,43 @@ function updatedImgAward( pkAward: number, nameFile: string, req: Request , res:
     });
 
 }
+
+function updatedVoucherLiqu( pkLiquidation: number, nameFile: string, req: Request , res: Response ) {
+
+    let sql = `CALL ts_sp_updateVoucherLiq(${ pkLiquidation }, '${ nameFile }');`;
+
+    Mysql.onExecuteQuery(sql, ( error: any, data: any[] ) => {
+        if (error) {
+            let pathImg = path.resolve(__dirname, '../upload/voucher/', nameFile);
+            if ( fs.existsSync( pathImg ) ) {
+                fs.unlinkSync(pathImg);
+            }
+
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+
+        if (data[0].showError === 0) {
+            let oldImg = path.resolve(__dirname, '../upload/voucher/', data[0].oldImg );
+            if ( fs.existsSync( oldImg ) ) {
+                fs.unlinkSync(oldImg);
+            }
+            
+        }
+
+        res.json({
+            ok: true,
+            data: [{ nameFile }],
+            messge: getErrorImg( data[0].showError )
+        });
+    });
+
+}
+
+
+
 UploadRoutes.put('/upload/driver/:entity/:id/:document', [verifyToken], (req: any, res: Response) => {
     let entity = req.params.entity.toUpperCase() || '';
     let idEntity = Number( req.params.id ) || 0;

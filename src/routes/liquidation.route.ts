@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
-import { verifyWebRoles } from '../middlewares/token.mdd';
+import { verifyWebRoles, verifyDriverRole } from '../middlewares/token.mdd';
 import moment from 'moment';
 import IBodyLiqu from "../interfaces/body_liquidation.interface";
 
@@ -176,11 +176,62 @@ LiquRouter.post('/Liquidation', [verifyToken], (req: any, res: Response) => {
         res.json({
             ok: true,
             showError: data[0].showError,
-            data
+            data: data[0]
         });
     });
 
 });
+
+LiquRouter.get('/Liquidation/Driver', [verifyToken, verifyDriverRole], (req: any, res: Response )=> {
+
+    let page = Number( req.query.page ) || 1;
+    let pkDriverToken = req.userData.pkDriver || 0;
+
+    let sql = `CALL ts_sp_getLiquidationDriver( ${ page }, ${ pkDriverToken } ); `;
+
+    MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+    
+        res.json({
+            ok: true,
+            total: data.length,
+            data
+        });
+    });
+    
+});
+
+LiquRouter.get('/Liquidation/info', [verifyToken, verifyDriverRole], (req: any, res: Response )=> {
+
+    let pkLiquidation = Number( req.query.pkLiqu ) || 1;
+    let pkDriverToken = req.userData.pkDriver || 0;
+
+    let sql = `CALL ts_sp_getInfoLiq( ${ pkLiquidation }, ${ pkDriverToken } ); `;
+
+    MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+        if (error) {
+            return res.status(400).json({
+                ok: false,
+                error
+            });
+        }
+    
+        res.json({
+            ok: true,
+            total: data.length,
+            data
+        });
+    });
+    
+});
+
 
 
 export default LiquRouter;

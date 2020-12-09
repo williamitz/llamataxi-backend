@@ -51,7 +51,8 @@ export default class MainServer {
         this.ccSystem = {
             pkConfig: 0,
             percentRate: 0,
-            culquiKey: ''
+            culquiKey: '',
+            culquiKeyPublic: ''
         };
         this.intervalJorunal = setInterval(() => {}, 60000);
     }

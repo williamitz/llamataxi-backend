@@ -120,10 +120,10 @@ JournalRouter.put("/Journal/Update/:id", [verifyToken], (req: any, res: Response
 
 });
 
-JournalRouter.delete( "/Journal/Delete/:id/:statusRegister", [verifyToken], (req: Request, res: Response) => {
+JournalRouter.delete( "/Journal/Delete/:id/:statusRegister", [verifyToken], (req: any, res: Response) => {
     let pkParam = req.params.id || 0;
     let status = req.params.statusRegister || 0;
-    let pkUserToken = 1; //req.userData.pkUser || 0;
+    let pkUserToken = req.userData.pkUser || 0;
 
     let sql = `CALL cc_sp_deleteJournal( '${pkParam}', ${status}, ${pkUserToken}, '${reqIp.getClientIp(req)}' );`;
 
