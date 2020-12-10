@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { verifyTokenUrl } from '../middlewares/token.mdd';
+import { verifyTokenUrl, verifyToken } from '../middlewares/token.mdd';
 import path from 'path';
 import fs from 'fs';
 
@@ -52,15 +52,14 @@ FilesRouter.get('/Driver/Img/Get/:entity/:idEntity/:fileName', [verifyTokenUrl] 
     res.sendFile(pathImg);
 });
 
-
 FilesRouter.get('/Img/Get/:module/:fileName', [verifyTokenUrl] , (req: Request, res: Response) => {
     
-    let module = req.params.module || 'award';
+    let modulesValid = ['award', 'voucher']
+
+    let module = req.params.module || 'voucher';
     let nameFile = req.params.fileName || 'xD';
     let pathImg = path.resolve( __dirname, `../upload/${ module }/`, nameFile );
     let pathDefault = path.resolve( __dirname, '../assets/no-image.jpg/' );
-
-    let modulesValid = ['award'];
 
     if (!fs.existsSync( pathImg )) {
         return res.sendFile(pathDefault);
@@ -71,5 +70,25 @@ FilesRouter.get('/Img/Get/:module/:fileName', [verifyTokenUrl] , (req: Request, 
     }
     
     res.sendFile(pathImg);
+});
+
+FilesRouter.get('/Dowland/:module/:fileName', [] , (req: Request, res: Response) => {
+    
+    let modulesValid = ['voucher']
+
+    let module = req.params.module || 'voucher';
+    let nameFile = req.params.fileName || 'xD';
+    let pathImg = path.resolve( __dirname, `../upload/${ module }/`, nameFile );
+    let pathDefault = path.resolve( __dirname, '../assets/no-image.jpg/' );
+
+    if (!fs.existsSync( pathImg )) {
+        res.download(pathDefault);
+    }
+
+    if (!modulesValid.includes( module )) {
+        res.download(pathDefault);
+    }
+    
+    res.download(pathImg);
 });
 export default FilesRouter;
