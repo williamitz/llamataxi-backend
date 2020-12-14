@@ -25,6 +25,7 @@ export default class MainServer {
     private _httpServer: http.Server;
     private journal: string;
     private journal_db: IJournalDB[];
+    private currentJournal: IJournalDB;
     private rateJournal_db: IRateJournal[];
     private pkJournal: number;
     private nameJournal: string;
@@ -48,6 +49,14 @@ export default class MainServer {
         this.percentRate = 0;
         this.radiusPentagon = 6;
         this.radiusPather = 4;
+        this.currentJournal = {
+            pkJournal: 0,
+            codeJournal: 'DIURN',
+            hourEnd: '',
+            hourStart: '',
+            nameJournal: '',
+            rates: []
+        };
         this.ccSystem = {
             pkConfig: 0,
             percentRate: 0,
@@ -115,9 +124,31 @@ export default class MainServer {
             this.rateJournal_db = json;
 
             journal.rates = json;
+            this.currentJournal = journal;
             console.log('notificando con socket', journal);
             this.io.to('MOVILE').emit('change-journal', journal);
             this.io.to('WEB').emit('change-journal', journal);
+        
+        });
+
+    }
+
+    public reLoadRateJournal( ) {
+
+        let sql = `CALL ts_sp_getRateForJournal(${ this.pkJournal });`;
+        MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
+
+            if (error) {
+                return console.log('Error en base de datos al listar tarifa segun la hora', error);
+            }
+
+            let dataString = JSON.stringify(data);
+            let json = JSON.parse(dataString);
+
+            this.currentJournal.rates = json;
+            console.log('notificando con socket', this.currentJournal);
+            this.io.to('MOVILE').emit('change-journal', this.currentJournal);
+            this.io.to('WEB').emit('change-journal', this.currentJournal);
         
         });
 
@@ -146,8 +177,6 @@ export default class MainServer {
             this.ccSystem = json[0];
         });
     }
-
-    
 
     private listenJournal() {
 

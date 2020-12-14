@@ -3,8 +3,10 @@ import { IBodyRate } from '../interfaces/body_rate.interface';
 import MysqlClass from "./../classes/mysqlConnect.class";
 import { verifyToken } from "./../middlewares/token.mdd";
 import reqIp from "request-ip";
+import MainServer from "../classes/mainServer.class";
 
 let RateRouter = Router();
+let Server = MainServer.instance;
 
 let MysqlCon = MysqlClass.instance;
 
@@ -111,6 +113,10 @@ RateRouter.put("/Rate/Update/:id", [verifyToken], (req: any, res: Response) => {
         ok: false,
         error,
       });
+    }
+
+    if ( data[0].showError === 0 ) {
+      Server.reLoadRateJournal();
     }
 
     res.json({
