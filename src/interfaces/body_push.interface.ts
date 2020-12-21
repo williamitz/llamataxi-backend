@@ -3,4 +3,5 @@ export interface Ipush {
     message: string;
     osId: string[];
     data: any;
+    template_id?: string;
 }
