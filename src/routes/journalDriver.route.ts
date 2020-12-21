@@ -94,7 +94,12 @@ JDriverRouter.get('/JournalDriver', [verifyToken, verifyDriverRole], (req: any, 
             data.forEach( (journal) => {
                 const dateStart = moment( journal.dateStart );
                 const current = moment();
-                journal.expired = current.diff( dateStart, 'hours' ) > 23 ? true : false;
+
+                if (journal.modeJournal != 'FORTODAY' ) {
+                    journal.expired = false;
+                } else {
+                    journal.expired = current.diff( dateStart, 'hours' ) > 23 ? true : false;
+                }
                 journal.dateExpired = dateStart.add( 24, 'hours' );
             });
         }

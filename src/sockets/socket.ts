@@ -416,6 +416,7 @@ export const newService = ( client: Socket, io: SocketIO.Server, radiusPentagon:
                 break;
         }
         
+        console.log('conductores notificados', driverNotify);
         let response = {
             ok: true,
             data: driverNotify,
