@@ -294,13 +294,13 @@ UploadRoutes.put('/upload/driver/:entity/:id/:document', [verifyToken], (req: an
             });
         }
 
-        updateFileDriver( entity, idEntity, document, img, req, res);
+        updateFileDriver( entity, idEntity, document, img, pkDriver, req, res);
     
     });
     
 });
 
-function updateFileDriver( entity: string, idEntity: number, document: string, img: string, req: any, res: Response ) {
+function updateFileDriver( entity: string, idEntity: number, document: string, img: string, pkDriver: number, req: any, res: Response ) {
     
     let pkUser = req.userData.pkUser;
 
@@ -314,13 +314,26 @@ function updateFileDriver( entity: string, idEntity: number, document: string, i
             });
         }
 
-        if (data[0].oldImg != '' && data[0].oldImg ) {
-            let imgOld = data[0].oldImg;
-            let oldPath = path.resolve( __dirname, '../upload/driver/', `${ idEntity }/${ imgOld }`);
-            if (fs.existsSync( oldPath )) {
-                fs.unlinkSync( oldPath );
+        if (entity === 'DRIVER') {
+            
+            if (data[0].oldImg != '' && data[0].oldImg ) {
+                let imgOld = data[0].oldImg;
+                let oldPath = path.resolve( __dirname, '../upload/driver/', `${ idEntity }/${ imgOld }`);
+                if (fs.existsSync( oldPath )) {
+                    fs.unlinkSync( oldPath );
+                }
+            }
+
+        } else {
+            if (data[0].oldImg != '' && data[0].oldImg ) {
+                let imgOld = data[0].oldImg;
+                let oldPath = path.resolve( __dirname, `../upload/driver/${ pkDriver }/vehicle-${ idEntity }/${ imgOld }`);
+                if (fs.existsSync( oldPath )) {
+                    fs.unlinkSync( oldPath );
+                }
             }
         }
+
 
         res.json({
             ok: true,

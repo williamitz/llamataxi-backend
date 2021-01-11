@@ -118,9 +118,9 @@ AuthRoutes.post('/singin/client', [], (req: Request, res: Response) => {
             
             // console.log('enviando mensjae a ', `${ contact.prefixPhone } ${ contact.phone }`);
             
-            const resSend = await sendCodeVeryf( body.prefixPhone || '', body.phone || '', codeVerify );
+            // const resSend = await sendCodeVeryf( body.prefixPhone || '', body.phone || '', codeVerify );
             
-            data[0].sendMsg = resSend.ok;
+            data[0].sendMsg = false; //resSend.ok;
         }
 
         res.json({
