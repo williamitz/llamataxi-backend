@@ -7,6 +7,8 @@ import moment from 'moment';
 import IBodyJournal from "../interfaces/body_journalDriver.interface";
 import MainServer from "../classes/mainServer.class";
 
+moment.locale('es');
+
 let JDriverRouter = Router();
 let MysqlCon = MysqlClass.instance;
 let Server = MainServer.instance;
@@ -79,7 +81,7 @@ JDriverRouter.get('/JournalDriver', [verifyToken, verifyDriverRole], (req: any, 
     sql += `${ pkDriverToken }, `;
     sql += `${ pkUserToken } );`;
 
-    console.log('sql journal driver', sql);
+    // console.log('sql journal driver', sql);
     
     MysqlCon.onExecuteQuery(sql, (error: any, data: any[]) => {
 
@@ -95,12 +97,17 @@ JDriverRouter.get('/JournalDriver', [verifyToken, verifyDriverRole], (req: any, 
                 const dateStart = moment( journal.dateStart );
                 const current = moment();
 
+                // console.log('f. inicio', dateStart.format('yyyy/MM/DD') );
+                
                 if (journal.modeJournal != 'FORTODAY' ) {
-                    journal.expired = false;
+                    const dateExp = moment( dateStart ).set( 'hour', 23 ).set('minutes', 59);
+                    // console.log('f. exp', dateExp );
+                    journal.dateExpired = dateExp;
+                    journal.expired = dateExp.diff( current, 'minutes' ) > 0 ? false : true;;
                 } else {
+                    journal.dateExpired = dateStart.add( 24, 'hours' );
                     journal.expired = current.diff( dateStart, 'hours' ) > 23 ? true : false;
                 }
-                journal.dateExpired = dateStart.add( 24, 'hours' );
             });
         }
     
